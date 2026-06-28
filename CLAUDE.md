@@ -1,290 +1,119 @@
-# De Sprong — CLAUDE.md
+## Project Configuration
+
+- **Language**: TypeScript
+- **Package Manager**: npm
+- **Add-ons**: prettier, eslint
+
+---
+
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## This Directory
+
+This Dropbox folder is the planning workspace for **De Sprong**. The actual SvelteKit code lives at `github.com/edvannunen/de-sprong`. Key files here:
+
+- [Specs/CLAUDE.md](Specs/CLAUDE.md) — complete project spec (data model, screens, design, build order)
+- [Specs/Added Specs.md](Specs/Added%20Specs.md) — incremental spec updates (June 2026)
+- [Specs/Steps taken.md](Specs/Steps%20taken.md) — build progress log
+- [img/](img/) — design assets already mirrored in the GitHub repo
 
 ## Project
 
-**Name:** De Sprong  
-**Subtitle:** O, Romantiek Der Hazen  
-*(based on a composition by Misha Mengelberg)*
-
-A web application for managing jazz music practice material for piano (or any other instrument).
-
----
-
-## Developer
-
-The developer has experience with C#, Java, PHP and JavaScript, but not recently.
-The goal is to learn how a modern web application is built — not just the end result,
-but also the process and the code itself.
-
-**Therefore, the following rules apply to all code:**
-- Write extensive comments in English in all files
-- Explain not just *what* the code does, but also *why*, for a reader who is learning the framework
-- Always choose the readable solution over the clever/compact one
-- When in doubt: more explanation, not less
-
----
+**De Sprong** (*O, Romantiek Der Hazen*) is a SvelteKit web app for managing jazz music practice material — a list of pieces (songs or exercises), each with study sources that can include YouTube/Spotify embeds and file attachments. Single-user, no authentication in v1.
 
 ## Tech Stack
 
-### Frontend + Backend
-**SvelteKit**  
-One framework for both the UI and the server-side API (via SvelteKit server routes).  
-Svelte is the most readable modern JavaScript framework and is approachable for someone
-with a C#/Java background.
+- **SvelteKit** — frontend + server routes, TypeScript
+- **SQLite + Drizzle ORM** — one local `.db` file, typed queries, migrations via Drizzle Kit
+- **Tailwind CSS + DaisyUI** — jazz aesthetic: warm amber/gold on white, mobile-first (iPad primary)
+- **svelte-dnd-action** — drag-and-drop for source ordering (works on touch + desktop)
+- **Vitest** (unit) + **Playwright** (e2e)
 
-### Database
-**SQLite** via **Drizzle ORM**  
-- One local `.db` file, no separate database server needed
-- Drizzle provides typed queries that are easy to read
-- Migrations via Drizzle Kit
-- Cascading deletes: when a piece is deleted, all its sources (and their attachments) are deleted too
-- For the amount of data involved (dozens of pieces) SQLite is more than sufficient
+## Commands
 
-### Styling
-**Tailwind CSS** + **DaisyUI** (component library)  
-Jazz look and feel — dark/moody aesthetic with warm accent colours.  
-Mobile-first: all layouts are designed for iPad/phone first, then scaled up for desktop.
-
-### Drag-and-drop
-**svelte-dnd-action** (lightweight, Svelte-native, works on both desktop and touch/mobile)
-
-### Testing
-- **Vitest** — unit tests (data model logic, URL detection, key dropdown values, helper functions)
-- **Playwright** — end-to-end tests (main page, detail page, CRUD flows)
-
-### Internet required?
-Yes — the app may require an internet connection (for embeds and external hosting later).
-
----
-
-## Environment
-
-- **Development:** local on Windows 11 laptop (`npm run dev`)
-- **Target platforms:** iPad (primary), Android phone, laptop (desktop browser) — mobile-first responsive design
-- **Hosting (later):** Dutch or GDPR-compliant provider, simple and affordable
-  (e.g. TransIP, Hetzner, or Fly.io)
-- **First version:** no authentication, no multi-user
-
----
-
-## Data Model
-
-### Category (tab on the main page)
-```
-category
-  id          integer  primary key
-  name        text     required        -- e.g. "Songs", "Exercises"
-  order       integer                  -- for tab ordering in later versions
-```
-*In the first version there are two fixed categories: "Songs" and "Exercises".
-The data model is already set up for dynamic tabs in later versions.*
-
-### Piece (a song or exercise)
-```
-piece
-  id              integer  primary key
-  category_id     integer  foreign key → category.id  ON DELETE CASCADE
-  name            text     required
-  info            text     optional
-  key             text     optional     -- selected from fixed dropdown (see Key Values below)
-  top_priority    boolean  default false
-  created_at      datetime default current_timestamp
-  updated_at      datetime default current_timestamp
+```bash
+npm run dev          # Dev server → http://localhost:5173
+npm run build        # Production build
+npm run preview      # Preview production build
+npm run test         # Vitest unit tests
+npm run test:e2e     # Playwright e2e tests
+npm run db:migrate   # Run Drizzle migrations
+npm run db:seed      # Seed DB (creates "Songs" and "Exercises" categories)
 ```
 
-### Source (study material linked to a piece)
+## Architecture
+
+SvelteKit filesystem routing — all mutations go through form actions in `+page.server.ts` files; no separate REST API.
+
 ```
-source
-  id                  integer  primary key
-  piece_id            integer  foreign key → piece.id  ON DELETE CASCADE
-  name                text     required
-  info                text     optional
-  key                 text     optional    -- always show if filled in; same dropdown as piece
-  link                text     optional    -- URL to YouTube, Spotify, or other webpage
-  attachment_path     text     optional    -- server path to uploaded file (image or PDF)
-  attachment_type     text     optional    -- "image" or "pdf"
-  attachment_filename text     optional    -- original filename, shown as label for PDFs
-  order               integer             -- display order, adjustable via drag-and-drop
-  created_at          datetime default current_timestamp
-  updated_at          datetime default current_timestamp
-```
-
-### Key values (hardcoded — will never change, a separate table would be overkill)
-The key field is always a dropdown with these values, in this order:
-```
-Major: C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B
-Minor: Cm, Dbm, Dm, Ebm, Em, Fm, Gbm, Gm, Abm, Am, Bbm, Bm
-```
-Export this as a constant (e.g. `KEY_OPTIONS`) in a shared `constants.ts` file.
-
-### File storage (attachments)
-- Uploaded files are stored in an `uploads/` folder on the server
-- Allowed file types: images (jpg, png, gif, webp) and PDF
-- The server path is stored in `attachment_path`, the original filename in `attachment_filename`
-- When a source is deleted, its associated file is also deleted from the server
-
-### Attachment display (client-side)
-- **Image:** show a clickable thumbnail; opens the full file in a new tab
-- **PDF:** show the filename as a clickable link; opens the PDF in a new tab
-- **No attachment:** show nothing (no empty space)
-
-### Link detection (client-side)
-- **YouTube:** `youtube.com/watch?v=ID` or `youtu.be/ID`
-  → convert to `https://www.youtube.com/embed/ID` and render as iframe
-- **Spotify track:** `open.spotify.com/track/ID`
-  → convert to `https://open.spotify.com/embed/track/ID` and render as compact iframe (80px tall)
-- **Other URL:** render as a clickable link
-- **No URL:** show nothing (no empty space)
-
----
-
-## Design
-
-The app has a **jazz look and feel** — think dark backgrounds, warm amber/gold accents,
-a slightly vintage typographic feel. Not sterile or clinical.
-
-### Assets (already in the repository)
-- **Main page banner:** `https://github.com/Edvannunen/de-sprong/blob/main/De%20Sprong%20-%20banner.png`  
-  → used as top banner on the main (piece list) page
-- **Source page banner:** `https://github.com/Edvannunen/de-sprong/blob/main/Source%20banner.png`  
-  → used as top banner on the source detail page
-- **Footer:** `https://github.com/Edvannunen/de-sprong/blob/main/Footer.jpg`  
-  → used as footer on all pages
-
-### Piece list visual style
-- Each piece in the list has a music note icon to the left of the name:
-  - **Quarter note (♩)** for top priority pieces
-  - **Double eighth note (𝄞 — use ♫)** for regular pieces
-- Reference style: Music Sheet Organizer on https://www.notion.com/templates/music-sheet-organizer
-
----
-
-## Screens
-
-### Main page (`/`) — Piece list
-
-**Layout (mobile-first table):**
-
-Three columns per row:
-
-| Name (≈80–90% width) | Key (small, max 3 chars) | Actions |
-|---|---|---|
-| ♩/♫ Piece name (clickable → source page) | e.g. Am | Edit / Delete |
-
-- Rows grouped by top priority (top priority pieces shown first), then alphabetically by name
-- **View mode per row:** name + key displayed inline
-- **Edit mode per row** (triggered by Edit button):
-  - Name becomes a text input
-  - Key becomes a dropdown (KEY_OPTIONS)
-  - Edit and Delete buttons are replaced by Save and Cancel buttons
-- **Delete:** always show a confirmation dialog before deleting
-- Info (if present) shown below name in a smaller font, max two lines, truncated if longer
-- Button above the list to add a new piece (opens detail/edit page for a new piece)
-
-### Source page (`/piece/[id]`)
-
-**Top banner:** Source banner image (see Design > Assets)
-
-**Default mode is view mode.** Edit and Delete buttons at the bottom of the page.
-On edit: Save and Cancel buttons replace Edit/Delete. On mobile this is the primary interaction pattern.
-
-**Layout per source (view mode):**
-```
-Name (bold, larger font)                    Key (right-aligned, same size as Name)
-Info (normal font, multiple lines if needed; one line of space if absent)
-Link (YouTube/Spotify embed, or clickable URL; one line of space if absent)
-Attachment (thumbnail if image; filename link if PDF; one line of space if absent)
+src/
+  routes/
+    +page.svelte          # Main page: tabbed piece list with inline edit
+    +page.server.ts       # Load + CRUD actions for pieces
+    piece/[id]/
+      +page.svelte        # Detail page: view/edit piece + sources (drag-to-reorder)
+      +page.server.ts     # Load + CRUD actions for sources + file uploads
+  lib/
+    constants.ts          # KEY_OPTIONS — the 24 key values (major + minor); import here, nowhere else
+    linkDetector.ts       # Converts YouTube/Spotify URLs to embed iframes
+    linkDetector.test.ts  # Vitest unit tests for link detection
+    server/
+      db.ts               # Drizzle database client + query helpers
+uploads/                  # Server-side file storage for attachments
 ```
 
-**Field specs:**
-- **Name:** bold, larger font. Text input in edit mode.
-- **Key:** right-aligned, same font size as Name. Dropdown (KEY_OPTIONS) in edit mode.
-- **Info:** normal font size. Multiple lines rendered as-is. In edit mode: two-line textarea.
-- **Link:**
-  - View mode: YouTube or Spotify embed rendered inline; other URLs as a clickable link
-  - Edit mode: plain text input for the URL
-- **Attachment:**
-  - View mode: clickable thumbnail (image) or filename link (PDF), both open in new tab
-  - Edit mode: file upload input; also show a delete button for existing attachment (with confirmation)
+### Data Model
 
-**Source order:** drag-and-drop to reorder sources (svelte-dnd-action, works on touch and desktop)
+Three tables with cascading deletes: `category` → `piece` → `source`.
 
-**Delete source:** always show a confirmation dialog before deleting
+| Table | Key fields |
+|---|---|
+| `category` | id, name, order |
+| `piece` | id, category_id, name, info, key, top_priority (bool), created_at, updated_at |
+| `source` | id, piece_id, name, info, key, link, attachment_path/type/filename, order, created_at, updated_at |
 
----
+`KEY_OPTIONS` in `src/lib/constants.ts`: `C Db D Eb E F Gb G Ab A Bb B` then `Cm … Bm` — hardcoded, never changes.
 
-## Build Order (first version)
+Deleting a source also deletes its file from `uploads/`. Deleting a piece cascades to all its sources.
 
-1. **Repository setup**
-   - Create a GitHub repository named `de-sprong` under `github.com/edvannunen`
-   - Use: `gh repo create edvannunen/de-sprong --public --description "De Sprong — jazz practice manager"`
-   - Initialise with a `README.md` (see README section below)
+### Link Detection (`src/lib/linkDetector.ts`)
 
-2. Set up SvelteKit project (+ Tailwind CSS + DaisyUI + Drizzle + SQLite)
+- `youtube.com/watch?v=ID` or `youtu.be/ID` → `<iframe>` embed
+- `open.spotify.com/track/ID` → compact `<iframe>` (80px tall)
+- Other URL → clickable `<a>` link
+- Empty → render nothing
 
-3. Set up testing infrastructure (Vitest + Playwright)
+### File Attachments
 
-4. Database schema + seed with two categories ("Songs", "Exercises")
+Images display as clickable thumbnails (open full file in new tab). PDFs display as a filename link (opens in new tab). The server path goes in `attachment_path`, original filename in `attachment_filename`.
 
-5. Main page: tabs + sorted list + add/delete piece (with inline edit)
+### UI Conventions
 
-6. Source page: view and edit piece + add/edit/delete sources
+- Piece list: three columns — Name (80–90% width) | Key (≤3 chars) | Actions
+- ♩ for `top_priority` pieces, ♫ for regular; top-priority rows sort first, then alphabetically
+- Inline edit on main page; full edit mode on source detail page (Edit/Save/Cancel at bottom)
+- Always show a confirmation dialog before any delete
 
-7. Link detection + YouTube/Spotify embeds
+## Code Conventions
 
-8. Attachments: upload, display, delete
+- All code, comments, and documentation in **English** (app name "De Sprong" and subtitle "O, Romantiek Der Hazen" stay Dutch)
+- Prioritise readable + explicit over compact/clever — the developer is learning the framework
+- Write extensive comments explaining *why*, not just *what*
+- Every route/component gets a short purpose description at the top of the file
 
-9. Drag-and-drop source order
+## Design Assets (in `img/`, already in the GitHub repo)
 
----
+| File | Used on |
+|---|---|
+| `img/banner_piece.png` | Top of main (piece list) page |
+| `img/banner_source.png` | Top of source detail page |
+| `img/footer.png` | Footer on all pages |
+| `img/favicon.ico` | Browser tab icon |
 
-## README (for the repository)
+## Build Status (as of 28 June 2026)
 
-The README should include:
+Done: SvelteKit scaffold, Tailwind + DaisyUI, Drizzle + SQLite schema + seed, main page (tabs/list/inline edit), detail page (view/edit/sources), link detection + embeds, drag-and-drop source order.
 
-- **Project description:** what De Sprong is and what it does
-- **Tech stack:** SvelteKit, SQLite, Drizzle ORM, Tailwind CSS, DaisyUI
-- **Prerequisites:** Node.js (version 18+), npm
-- **Installation:**
-  ```bash
-  git clone https://github.com/edvannunen/de-sprong.git
-  cd de-sprong
-  npm install
-  ```
-- **Database setup:**
-  ```bash
-  npm run db:migrate
-  npm run db:seed
-  ```
-- **Development:**
-  ```bash
-  npm run dev
-  ```
-  Then open `http://localhost:5173` in your browser.
-- **Testing:**
-  ```bash
-  npm run test          # Vitest unit tests
-  npm run test:e2e      # Playwright end-to-end tests
-  ```
-- **Project structure:** brief overview of key folders and files
-
----
-
-## Later Versions (do not build yet)
-
-- Dynamic tabs: add, delete, rename, reorder
-- Search by name or key on the main page
-- Authentication and multi-user (each user their own environment)
-- PWA (Progressive Web App) — installable on iPad/Android home screen
-- Native app (possibly via Capacitor or Tauri)
-
----
-
-## Conventions
-
-- All variable names, functions and filenames in **English** (standard in code)
-- All comments and documentation in **English**
-- UI text in **English** (except the app name "De Sprong" and subtitle "O, Romantiek Der Hazen")
-- No unnecessary abstraction layers in the first version — keep it simple and readable
-- Every route/component gets a short description at the top of the file
-- `KEY_OPTIONS` constant lives in `src/lib/constants.ts` and is imported wherever a key dropdown is needed
+Remaining for v1: file attachment upload/display/delete · Playwright e2e test suite · design polish.

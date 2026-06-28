@@ -1,0 +1,58 @@
+**DE SPRONG**
+Een webapplicatie waarbij ik het oefenmateriaal voor de piano (of ander instrument) manage. Titel app: "De Sprong", subtitel "O, Romantiek Der Hazen" (gebaseerd op een compositie van Misha Mengelberg)   
+
+*CONTEXT*
+Het applicatie moet werken op een laptop, android telefoon en iPad (iOS). Testversie draait lokaal op Windows 11 laptop, hosting extern via een Nederlandse hostingpartij (ergens eenvoudig en goedkoop). 
+
+Ik kan programmeren (In talen als C#, Java, PHP, JavaScript) maar dat is al lang geleden. Ik wil het opgezet hebben in een modernere programmeertaal van bijv een JavaScript variant. Het is wel essentieel dat ik het op code niveau begrijp, zodat ik het zelf aan kan passen of uit kan beiden. Documentatie in de code is essentieel. Ik weet dat zoiets ook te doen is met bijv "Notion", maar het is voor mij ook een leerproces.
+
+- Over opslaan van de data graag advies, wat handigste en haalbaarste is. Het gaat niet om grote hoeveelheden.
+- Qua design heb ik nog niet een heel duidelijk idee. Graag advies.
+
+*TECH STACK*
+- Frontend/Backend. graag advies, maar bijvoorbeeld: SvelteKit (of vergelijkbaar)
+- Database. Graag advies, maar bijvoorbeeld: SQLite (via Drizzle ORM) 
+- Hosting komt later wel.
+- De app hoeft niet te werken zonder internet
+
+*SPECS*
+Hoofdpagina De Sprong
+Twee tabbladen "Songs", "Oefenmateriaal". Dit hoeft in de eerste versie niet dynamisch te zijn, maar hou er rekening mee dat het in latere versies wel dynamisch moet worden, waarbij tabbladen hernoemd, toegevoegd en verwijderd kunnen worden.
+Elk tabblad heeft een lijst stukken met per regel een "naam" (tekst), "toonsoort" (tekst, optioneel). En een "Top prio" (yes/no). Gegroepeerd op Top prio (yes bovenaan) en daarbinnen op naam. Het gaat eerder om tientallen entries dan om honderden.
+Mogelijkheid om een "stuk" toe te voegen (naar detailpagina) of te verwijderen (na bevestiging)
+
+Detailpagina
+Song/oefenmateriaal heeft:
+- Naam (tekst, verplicht)
+- Info (langere tekst, optioneel, geen ruimte innemen indien niet ingevuld)
+- Toonsoort (korte tekst, optioneel)
+- Top prio (yes/no)
+Elke song heeft nul of meerdere bronnen
+Elke bron bestaat uit:
+- Naam (tekst, verplicht) 
+- Info (langere tekst, optioneel, geen ruimte innemen indien niet ingevuld) 
+- Toonsoort (optioneel)
+- Link (optioneel). Als de link wordt herkend als Youtube of Spotify, of als link naar een image of PDF:
+- - Een link naar YouTube wordt ingevoerd als youtube.com/watch?v=ID maar wordt daaronder als embedded YouTube weergegeven en is direct af te spelen
+- - Een link naar Spotify track wordt ingevoerd als https://open.spotify.com/track/ID maar wordt als embedded, in minimaal formaat afgebeeld. 
+- Bijlage (optioneel)
+- - Opslaan op de server
+- - Bij een image een thumbnail tonen, openen op nieuw tabblad
+- - Bij een PDF namen tonen, openen op nieuw tabblad
+De volgorde van de bronnen moet aanpasbaar zijn, bij voorkeur door drag en drop, of anders met pijltjes
+Mogelijkheid om bron toe te voegen of te verwijderen (na bevestiging) 
+
+*Eerste versie*
+- Geen auth, geen multi-user
+- Begin met lokaal draaien op Windows 11 
+- Eerst de datastructuur en database, dan de hoofdpagina met tabs, dan de detailpagina, dan drag-and-drop 
+
+*Latere versies*
+- De tabbladen op hoofdpagina dynamisch (volgorde, hernoemen, toegevoegen en verwijderen)
+- Zoeken op hoofdpagina op naam of toonsoort
+- Auth en multi-user. 
+- Native app?
+- Eventueel ook naar het Engels?
+
+
+
