@@ -230,6 +230,19 @@ export const actions: Actions = {
 			.run();
 	},
 
+	// Toggle top_priority without entering full edit mode.
+	// Called when the user clicks the checkbox in view mode.
+	toggleTopPriority: async ({ request, params }) => {
+		const id = Number(params.id);
+		const data = await request.formData();
+		const topPriority = data.has('topPriority');
+
+		db.update(piece)
+			.set({ topPriority, updatedAt: new Date().toISOString() })
+			.where(eq(piece.id, id))
+			.run();
+	},
+
 	// Update the display order of all sources after a drag-and-drop.
 	// Receives a comma-separated list of source IDs in the new order.
 	reorderSources: async ({ request }) => {

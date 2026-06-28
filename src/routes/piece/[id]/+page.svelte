@@ -117,6 +117,18 @@
 				<span class="text-xl font-semibold text-base-content/70">{data.piece.key}</span>
 			{/if}
 		</div>
+		<!-- Top priority toggle — always visible in view mode, saves immediately on change -->
+		<form method="POST" action="?/toggleTopPriority" use:enhance class="flex items-center gap-2 mb-2">
+			<input
+				type="checkbox"
+				name="topPriority"
+				id="topPriority-view"
+				class="checkbox checkbox-sm"
+				checked={data.piece.topPriority}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			/>
+			<label for="topPriority-view" class="text-sm">Top priority</label>
+		</form>
 		{#if data.piece.info}
 			<p class="text-base-content/70 mb-4 whitespace-pre-wrap">{data.piece.info}</p>
 		{:else}
