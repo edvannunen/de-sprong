@@ -21,15 +21,15 @@
 	let activeCategoryId = $derived(data.categories[activeTab]?.id);
 </script>
 
-<!-- Top banner — border above and below separates it clearly from the page content -->
-<div class="max-w-2xl mx-auto border-y border-base-300">
-	<img src="/img/banner_piece.png" alt="De Sprong" class="w-full opacity-70" />
+<!-- Top banner — shadow gives it depth; opacity toned down so it doesn't overpower the content -->
+<div class="max-w-2xl mx-auto border-y border-base-300 shadow-md">
+	<img src="/img/banner_piece.png" alt="De Sprong" class="w-full opacity-50" />
 </div>
 
 <main class="max-w-2xl mx-auto px-4 py-6">
 
-	<!-- Category tabs -->
-	<div class="tabs tabs-border mb-4" role="tablist">
+	<!-- Category tabs — tabs-lifted gives a clear border around each tab -->
+	<div class="tabs tabs-lifted mb-4" role="tablist">
 		{#each data.categories as cat, i}
 			<button
 				role="tab"
@@ -50,6 +50,8 @@
 			placeholder="New piece name…"
 			class="input input-bordered input-sm flex-1"
 			required
+			oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+			oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
 		/>
 		<select name="key" class="select select-bordered select-sm w-20">
 			<option value="">Key</option>
@@ -91,6 +93,8 @@
 										class="input input-bordered input-sm w-full"
 										required
 										autofocus
+										oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+										oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
 									/>
 								</form>
 							</td>
@@ -149,7 +153,7 @@
 
 </main>
 
-<!-- Footer — border above and below separates it clearly from the page content -->
+<!-- Footer -->
 <div class="max-w-2xl mx-auto mt-8 border-y border-base-300">
-	<img src="/img/footer.png" alt="" class="w-full opacity-70" />
+	<img src="/img/footer.png" alt="" class="w-full opacity-50" />
 </div>

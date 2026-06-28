@@ -55,4 +55,7 @@ Mogelijkheid om bron toe te voegen of te verwijderen (na bevestiging)
 - Eventueel ook naar het Engels?
 
 
+***
+- Hoe kan ik de db benaderen en de data inzien?
+
 

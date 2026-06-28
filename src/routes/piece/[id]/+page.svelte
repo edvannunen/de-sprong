@@ -24,6 +24,15 @@
 	// Whether the "add source" form is visible (only in edit mode)
 	let showAddSource = $state(false);
 
+	// When the user clicks "Save" while the add-source form is open and confirms
+	// they want to save the new source too, we set this flag. The add-source form's
+	// enhance callback checks it and submits the piece form once the source is saved.
+	let pendingPieceSave = $state(false);
+
+	// References to the piece edit form and add-source form, used for programmatic submit.
+	let pieceFormEl: HTMLFormElement;
+	let addSourceFormEl: HTMLFormElement;
+
 	// Hidden form element used to submit the reorder action after a drag
 	let reorderForm: HTMLFormElement;
 	let reorderIds = $state('');
@@ -43,9 +52,9 @@
 	}
 </script>
 
-<!-- Source page banner — border above and below separates it clearly from the page content -->
-<div class="max-w-2xl mx-auto border-y border-base-300">
-	<img src="/img/banner_source.png" alt="De Sprong" class="w-full opacity-70" />
+<!-- Source page banner — shadow gives it depth; opacity toned down so it doesn't overpower the content -->
+<div class="max-w-2xl mx-auto border-y border-base-300 shadow-md">
+	<img src="/img/banner_source.png" alt="De Sprong" class="w-full opacity-50" />
 </div>
 
 <main class="max-w-2xl mx-auto px-4 py-6">
@@ -56,7 +65,7 @@
 	<!-- ── PIECE HEADER ── -->
 	{#if editing}
 		<!-- Edit mode: piece fields are inputs -->
-		<form id="piece-form" method="POST" action="?/editPiece" use:enhance={() => {
+		<form id="piece-form" bind:this={pieceFormEl} method="POST" action="?/editPiece" use:enhance={() => {
 			return async ({ update }) => {
 				editing = false;
 				await update();
@@ -70,6 +79,8 @@
 					class="input input-bordered text-xl font-bold flex-1"
 					required
 					autofocus
+					oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+					oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
 				/>
 				<select name="key" class="select select-bordered w-24">
 					<option value="">Key</option>
@@ -91,7 +102,7 @@
 			<textarea
 				name="info"
 				class="textarea textarea-bordered w-full mb-4"
-				rows="3"
+				rows="2"
 				placeholder="Notes about this piece…"
 			>{data.piece.info ?? ''}</textarea>
 		</form>
@@ -140,10 +151,12 @@
 				{#if editing}
 					<!-- SOURCE EDIT MODE -->
 					<!-- Edit and delete forms are siblings (not nested) — nested forms are invalid HTML -->
+					<!-- enctype="multipart/form-data" is required for file uploads -->
 					<form
 						id="edit-source-{src.id}"
 						method="POST"
 						action="?/editSource"
+						enctype="multipart/form-data"
 						use:enhance={() => {
 							return async ({ update }) => { await update(); };
 						}}
@@ -156,6 +169,8 @@
 								value={src.name}
 								class="input input-bordered input-sm font-bold flex-1"
 								required
+								oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+								oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
 							/>
 							<select name="key" class="select select-bordered select-sm w-24">
 								<option value="">Key</option>
@@ -167,7 +182,7 @@
 						<textarea
 							name="info"
 							class="textarea textarea-bordered textarea-sm w-full mb-2"
-							rows="2"
+							rows="1"
 							placeholder="Notes…"
 						>{src.info ?? ''}</textarea>
 						<input
@@ -177,7 +192,35 @@
 							class="input input-bordered input-sm w-full mb-2"
 							placeholder="YouTube, Spotify, or URL…"
 						/>
+						<!-- File upload — leave empty to keep the existing attachment -->
+						<input
+							type="file"
+							name="attachment"
+							accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+							class="file-input file-input-bordered file-input-sm w-full mb-2"
+						/>
 					</form>
+
+					<!-- Show current attachment with a Remove option (separate form so it can submit independently) -->
+					{#if src.attachmentPath}
+						<div class="flex items-center gap-2 mb-2 text-sm text-base-content/70">
+							{#if src.attachmentType === 'image'}
+								<img src="/uploads/{src.attachmentPath}" alt="" class="h-8 w-8 object-cover rounded border border-base-200" />
+							{/if}
+							<span class="truncate">{src.attachmentFilename}</span>
+							<form method="POST" action="?/deleteAttachment" use:enhance class="inline ml-auto shrink-0">
+								<input type="hidden" name="id" value={src.id} />
+								<button
+									type="submit"
+									class="btn btn-xs btn-ghost text-error"
+									onclick={(e) => {
+										if (!confirm('Remove this attachment?')) e.preventDefault();
+									}}
+								>Remove</button>
+							</form>
+						</div>
+					{/if}
+
 					<div class="flex justify-between items-center mt-1">
 						<button type="submit" form="edit-source-{src.id}" class="btn btn-sm btn-primary">Save source</button>
 
@@ -239,6 +282,28 @@
 					{:else}
 						<div class="h-4"></div>
 					{/if}
+
+					<!-- Attachment: image shows as a clickable thumbnail; PDF shows as a filename link -->
+					{#if src.attachmentType === 'image'}
+						<div class="mt-2">
+							<a href="/uploads/{src.attachmentPath}" target="_blank" rel="noopener noreferrer">
+								<img
+									src="/uploads/{src.attachmentPath}"
+									alt={src.attachmentFilename ?? 'Attachment'}
+									class="max-h-32 rounded border border-base-200 hover:opacity-80 transition-opacity"
+								/>
+							</a>
+						</div>
+					{:else if src.attachmentType === 'pdf'}
+						<div class="mt-2">
+							<a
+								href="/uploads/{src.attachmentPath}"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="link link-primary text-sm"
+							>{src.attachmentFilename}</a>
+						</div>
+					{/if}
 				{/if}
 			</div>
 		{/each}
@@ -249,12 +314,20 @@
 		<div class="mt-4">
 			{#if showAddSource}
 				<form
+					bind:this={addSourceFormEl}
 					method="POST"
 					action="?/addSource"
+					enctype="multipart/form-data"
 					use:enhance={() => {
 						return async ({ update }) => {
 							showAddSource = false;
 							await update();
+							// If the user clicked the bottom "Save" while this form was open
+							// and confirmed they wanted to save the source first, now submit the piece form.
+							if (pendingPieceSave) {
+								pendingPieceSave = false;
+								pieceFormEl.requestSubmit();
+							}
 						};
 					}}
 					class="card border border-base-200 p-4 bg-base-50"
@@ -268,6 +341,8 @@
 							placeholder="Name"
 							required
 							autofocus
+							oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+							oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
 						/>
 						<select name="key" class="select select-bordered select-sm w-24">
 							<option value="">Key</option>
@@ -279,7 +354,7 @@
 					<textarea
 						name="info"
 						class="textarea textarea-bordered textarea-sm w-full mb-2"
-						rows="2"
+						rows="1"
 						placeholder="Notes…"
 					></textarea>
 					<input
@@ -287,6 +362,12 @@
 						name="link"
 						class="input input-bordered input-sm w-full mb-2"
 						placeholder="YouTube, Spotify, or URL…"
+					/>
+					<input
+						type="file"
+						name="attachment"
+						accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+						class="file-input file-input-bordered file-input-sm w-full mb-2"
 					/>
 					<div class="flex gap-2">
 						<button type="submit" class="btn btn-sm btn-primary">Add source</button>
@@ -302,7 +383,26 @@
 	<!-- ── BOTTOM BUTTONS ── -->
 	<div class="flex gap-2 mt-8 pt-4 border-t">
 		{#if editing}
-			<button type="submit" form="piece-form" class="btn btn-primary">Save</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				onclick={() => {
+					if (showAddSource) {
+						// The add-source form is open — ask whether to save it first.
+						if (confirm('Do you also want to save the new source?')) {
+							// Submit the add-source form; its enhance callback will then
+							// submit the piece form once the source has been saved.
+							pendingPieceSave = true;
+							addSourceFormEl.requestSubmit();
+						} else {
+							// User chose not to save the new source — just save the piece.
+							pieceFormEl.requestSubmit();
+						}
+					} else {
+						pieceFormEl.requestSubmit();
+					}
+				}}
+			>Save</button>
 			<button type="button" class="btn btn-ghost" onclick={() => { editing = false; showAddSource = false; }}>Cancel</button>
 		{:else}
 			<button type="button" class="btn btn-primary" onclick={() => editing = true}>Edit</button>
@@ -324,7 +424,7 @@
 
 </main>
 
-<!-- Footer — border above and below separates it clearly from the page content -->
+<!-- Footer -->
 <div class="max-w-2xl mx-auto mt-8 border-y border-base-300">
-	<img src="/img/footer.png" alt="" class="w-full opacity-70" />
+	<img src="/img/footer.png" alt="" class="w-full opacity-50" />
 </div>

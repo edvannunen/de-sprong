@@ -27,5 +27,6 @@ vite.config.ts.timestamp-*
 *.db-shm
 *.db-wal
 
-# Uploaded files (user content, not part of the codebase)
-uploads/
+# Uploaded files (user content, not part of the codebase).
+# Leading / anchors this to the project root so src/routes/uploads/ is NOT ignored.
+/uploads/
