@@ -5,12 +5,15 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-// A category is a tab on the main page (e.g. "Songs", "Exercises").
-// The order column is reserved for future dynamic tab reordering.
+// A category is a user-managed tab on the main page.
+// Categories can be added, renamed, recolored, reordered, and deleted (when empty).
 export const category = sqliteTable('category', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull(),
-	order: integer('order').notNull().default(0)
+	order: integer('order').notNull().default(0),
+	// Index into the PALETTE array in src/lib/constants.ts (0–5).
+	// Existing rows get 0 (sky blue) when this migration runs.
+	colorIndex: integer('color_index').notNull().default(0)
 });
 
 // A piece is a single song or exercise the user is practising.

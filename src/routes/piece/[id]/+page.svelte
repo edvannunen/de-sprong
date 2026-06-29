@@ -6,7 +6,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { KEY_OPTIONS } from '$lib/constants';
+	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
 	import { detectLink } from '$lib/linkDetector';
 	import { dndzone } from 'svelte-dnd-action';
 	import type { PageData } from './$types';
@@ -37,6 +37,9 @@
 	let reorderForm: HTMLFormElement;
 	let reorderIds = $state('');
 
+	// PALETTE is imported from $lib/constants — single source of truth for both pages.
+	// Each source card rotates through the palette by its position index.
+
 	function handleConsider(e: CustomEvent) {
 		// Update local array order while dragging (gives visual feedback)
 		sources = e.detail.items;
@@ -53,7 +56,7 @@
 </script>
 
 <!-- Source page banner — shadow gives it depth; opacity toned down so it doesn't overpower the content -->
-<div class="max-w-2xl mx-auto border-y border-base-300 shadow-md">
+<div class="max-w-2xl mx-auto border-y shadow-md" style="background-color: #FEF3C7; border-color: #D97706;">
 	<img src="/img/banner_source.png" alt="De Sprong" class="w-full opacity-50" />
 </div>
 
@@ -137,7 +140,8 @@
 	{/if}
 
 	<!-- ── SOURCE LIST ── -->
-	<h2 class="text-lg font-semibold mb-3 border-b pb-1">Sources</h2>
+	<!-- "Sources: x" shows the count at a glance — sources.length reflects the current (possibly reordered) list -->
+	<h2 class="text-lg font-semibold mb-3 border-b pb-1">Sources: {sources.length}</h2>
 
 	<!-- Hidden form to submit reorder action after drag-and-drop -->
 	<form
@@ -158,8 +162,10 @@
 		onfinalize={handleFinalize}
 		class="flex flex-col gap-4"
 	>
-		{#each sources as src (src.id)}
-			<div class="card bg-base-100 border border-base-200 shadow-sm p-4">
+		{#each sources as src, i (src.id)}
+			<!-- Each source card gets the next pastel color from the palette (wrapping around) -->
+			{@const color = PALETTE[i % PALETTE.length]}
+			<div class="card border border-base-200 shadow-sm p-4" style="background-color: {color.bg}">
 				{#if editing}
 					<!-- SOURCE EDIT MODE -->
 					<!-- Edit and delete forms are siblings (not nested) — nested forms are invalid HTML -->
@@ -224,7 +230,7 @@
 								<input type="hidden" name="id" value={src.id} />
 								<button
 									type="submit"
-									class="btn btn-xs btn-ghost text-error"
+									class="btn btn-xs btn-ghost" style="color: #92400E;"
 									onclick={(e) => {
 										if (!confirm('Remove this attachment?')) e.preventDefault();
 									}}
@@ -240,7 +246,7 @@
 							<input type="hidden" name="id" value={src.id} />
 							<button
 								type="submit"
-								class="btn btn-sm btn-ghost text-error"
+								class="btn btn-sm btn-ghost" style="color: #92400E;"
 								onclick={(e) => {
 									if (!confirm(`Delete source "${src.name}"?`)) e.preventDefault();
 								}}
@@ -423,7 +429,7 @@
 			<form method="POST" action="?/deletePiece" use:enhance class="inline">
 				<button
 					type="submit"
-					class="btn btn-ghost text-error"
+					class="btn btn-ghost" style="color: #92400E;"
 					onclick={(e) => {
 						if (!confirm(`Delete "${data.piece.name}"? All sources will also be deleted.`)) {
 							e.preventDefault();
@@ -437,6 +443,6 @@
 </main>
 
 <!-- Footer -->
-<div class="max-w-2xl mx-auto mt-8 border-y border-base-300">
+<div class="max-w-2xl mx-auto mt-8 border-y" style="background-color: #FEF3C7; border-color: #D97706;">
 	<img src="/img/footer.png" alt="" class="w-full opacity-50" />
 </div>

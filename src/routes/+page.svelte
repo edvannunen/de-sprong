@@ -1,49 +1,347 @@
 <!--
   Main page — tabbed piece list.
-  Shows one tab per category (Songs, Exercises).
-  Each tab lists its pieces sorted by priority then name, with inline edit and delete.
+  Categories are fully user-managed: add, rename, recolor, drag-to-reorder, delete (when empty).
+  Each tab shows its pieces with a name/key filter and inline edit.
 -->
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { KEY_OPTIONS } from '$lib/constants';
+	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
+	import { dndzone } from 'svelte-dnd-action';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	// Which tab is active (index into data.categories)
-	let activeTab = $state(0);
+	// Track the active tab by category ID rather than by array index.
+	// This keeps the correct tab highlighted even after drag-and-drop reordering.
+	let activeTabId = $state<number | null>(data.categories[0]?.id ?? null);
+
+	// Which category's edit panel is currently open (null = none).
+	let editingTabId = $state<number | null>(null);
+	// Fields used by the edit panel's form — populated when the panel opens.
+	let editTabName = $state('');
+	let editColorIndex = $state(0);
+
+	// Whether the "add category" panel is visible
+	let showAddCategory = $state(false);
+	let newColorIndex = $state(0);
 
 	// The id of the piece currently being edited inline (null = none)
 	let editingId = $state<number | null>(null);
 
-	// The pieces belonging to the active category
-	let activePieces = $derived(data.categories[activeTab]?.pieces ?? []);
-	let activeCategoryId = $derived(data.categories[activeTab]?.id);
+	// Search and key filter — both reset when switching tabs so they don't bleed across categories
+	let searchQuery = $state('');
+	let filterKey = $state('');
+
+	// Local copy of categories for drag-and-drop reordering.
+	// Mirrors data.categories and is re-synced whenever the server refreshes after a form action.
+	// (Same pattern used by the sources DnD on the detail page.)
+	let tabOrder = $state([...data.categories]);
+	$effect(() => { tabOrder = [...data.categories]; });
+
+	// If the active tab was just deleted, fall back to the first remaining category.
+	// This runs automatically whenever tabOrder changes.
+	$effect(() => {
+		const ids = tabOrder.map((c) => c.id);
+		if (activeTabId !== null && !ids.includes(activeTabId)) {
+			activeTabId = tabOrder[0]?.id ?? null;
+		}
+	});
+
+	// Hidden form and bound value for the category reorder action (same pattern as source reorder)
+	let reorderCatsForm: HTMLFormElement;
+	let reorderCatIds = $state('');
+
+	// The category and filtered pieces currently on display
+	let activeCategory = $derived(tabOrder.find((c) => c.id === activeTabId));
+	let activePieces = $derived(
+		(activeCategory?.pieces ?? []).filter((p) => {
+			const nameMatch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+			const keyMatch = filterKey === '' || p.key === filterKey;
+			return nameMatch && keyMatch;
+		})
+	);
+
+	function handleTabConsider(e: CustomEvent) {
+		// Update local order while dragging (gives visual feedback during the drag)
+		tabOrder = e.detail.items;
+	}
+
+	async function handleTabFinalize(e: CustomEvent) {
+		// Drag ended — persist the new order to the server
+		tabOrder = e.detail.items;
+		reorderCatIds = tabOrder.map((c) => c.id).join(',');
+		// Wait one tick so reorderCatIds is bound to the hidden input before submit
+		await Promise.resolve();
+		reorderCatsForm.requestSubmit();
+	}
+
+	// Open the edit panel for a category, pre-filling the input fields
+	function startEditTab(cat: typeof tabOrder[0]) {
+		editingTabId = cat.id;
+		editTabName = cat.name;
+		editColorIndex = cat.colorIndex;
+		showAddCategory = false; // close the add panel if it was open
+	}
 </script>
 
-<!-- Top banner — shadow gives it depth; opacity toned down so it doesn't overpower the content -->
-<div class="max-w-2xl mx-auto border-y border-base-300 shadow-md">
+<!-- Top banner -->
+<div class="max-w-2xl mx-auto border-y shadow-md" style="background-color: #FEF3C7; border-color: #D97706;">
 	<img src="/img/banner_piece.png" alt="De Sprong" class="w-full opacity-50" />
 </div>
 
 <main class="max-w-2xl mx-auto px-4 py-6">
 
-	<!-- Category tabs — tabs-lifted gives a clear border around each tab -->
-	<div class="tabs tabs-lifted mb-4" role="tablist">
-		{#each data.categories as cat, i}
-			<button
-				role="tab"
-				class="tab {activeTab === i ? 'tab-active' : ''}"
-				onclick={() => { activeTab = i; editingId = null; }}
+	<!-- ── CATEGORY TABS ── -->
+
+	<!--
+	  Hidden form for category reorder — submitted programmatically after a drag finishes.
+	  Must live outside the DnD zone (but can be anywhere in the DOM) because it's
+	  identified by its bind:this reference, not by position.
+	-->
+	<form
+		bind:this={reorderCatsForm}
+		method="POST"
+		action="?/reorderCategories"
+		use:enhance={() => {
+			// invalidateAll: false — avoid a full page reload; the local tabOrder is already correct
+			return async ({ update }) => { await update({ invalidateAll: false }); };
+		}}
+	>
+		<input type="hidden" name="ids" bind:value={reorderCatIds} />
+	</form>
+
+	<div class="mb-6">
+		<!-- Row: draggable tab pills + "add category" button -->
+		<div class="flex gap-2 flex-wrap items-center">
+
+			<!--
+			  DnD zone — contains only the draggable category pills.
+			  The "+ Category" button is intentionally placed outside this zone
+			  so it can't be accidentally grabbed during a drag.
+			-->
+			<div
+				use:dndzone={{ items: tabOrder, flipDurationMs: 150 }}
+				onconsider={handleTabConsider}
+				onfinalize={handleTabFinalize}
+				class="flex gap-2 flex-wrap"
+				role="tablist"
 			>
-				{cat.name}
-			</button>
-		{/each}
+				{#each tabOrder as cat (cat.id)}
+					{@const color = PALETTE[cat.colorIndex % PALETTE.length]}
+					{@const isActive = cat.id === activeTabId}
+					{@const isEditing = cat.id === editingTabId}
+					<button
+						role="tab"
+						class="flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-all
+						       {isActive ? 'shadow-md' : 'opacity-60 hover:opacity-90'}"
+						style="background-color: {color.bg}; {isActive ? `outline: 2px solid ${color.dark}; outline-offset: 2px;` : ''}"
+						onclick={() => {
+							activeTabId = cat.id;
+							editingId = null;
+							searchQuery = '';
+							filterKey = '';
+						}}
+					>
+						<!-- Coloured circle icon -->
+						<span
+							class="w-5 h-5 rounded-full flex items-center justify-center text-xs text-white shrink-0"
+							style="background-color: {color.dark}"
+						>♩</span>
+
+						{cat.name}
+
+						<!-- Piece count badge -->
+						<span
+							class="text-xs font-bold rounded-full px-2 py-0.5 text-white"
+							style="background-color: {color.dark}"
+						>{cat.pieces.length}</span>
+
+						<!--
+						  Pencil icon — opens/closes the edit panel for this category.
+						  stopPropagation prevents the click from also activating the tab.
+						-->
+						<span
+							class="text-xs ml-1 {isEditing ? 'opacity-100' : 'opacity-40 hover:opacity-80'}"
+							title="Edit category"
+							role="button"
+							tabindex="0"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (isEditing) editingTabId = null;
+								else startEditTab(cat);
+							}}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') {
+									e.stopPropagation();
+									if (isEditing) editingTabId = null;
+									else startEditTab(cat);
+								}
+							}}
+						>✎</span>
+					</button>
+				{/each}
+			</div>
+
+			<!-- Add category button — outside the DnD zone -->
+			<button
+				type="button"
+				class="flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium border border-dashed border-base-300 text-base-content/50 hover:text-base-content hover:border-base-content/30 transition-all"
+				onclick={() => { showAddCategory = !showAddCategory; editingTabId = null; }}
+			>+ Category</button>
+		</div>
+
+		<!-- Edit panel — appears below the tab row when a pencil icon is clicked -->
+		{#if editingTabId !== null}
+			{@const editCat = tabOrder.find((c) => c.id === editingTabId)}
+			{#if editCat}
+				<div class="mt-3 p-3 border border-base-200 rounded-xl bg-base-100 flex flex-col gap-3">
+
+					<!-- Name input + Save/Cancel -->
+					<form
+						method="POST"
+						action="?/updateCategory"
+						use:enhance={() => {
+							return async ({ update }) => { editingTabId = null; await update(); };
+						}}
+						class="flex gap-2 items-center"
+					>
+						<input type="hidden" name="id" value={editingTabId} />
+						<!--
+						  colorIndex is passed as a hidden input so both name and color
+						  are saved in one form submission when the user clicks Save.
+						-->
+						<input type="hidden" name="colorIndex" value={editColorIndex} />
+						<input
+							type="text"
+							name="name"
+							bind:value={editTabName}
+							class="input input-bordered input-sm flex-1"
+							required
+							autofocus
+							oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+							oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
+						/>
+						<button type="submit" class="btn btn-sm btn-primary">Save</button>
+						<button type="button" class="btn btn-sm btn-ghost" onclick={() => editingTabId = null}>Cancel</button>
+					</form>
+
+					<!-- Color swatches — clicking one updates editColorIndex (saved with the form above) -->
+					<div class="flex gap-2 items-center">
+						<span class="text-xs text-base-content/50 shrink-0">Color:</span>
+						{#each PALETTE as swatchColor, idx}
+							<button
+								type="button"
+								class="w-6 h-6 rounded-full transition-all"
+								style="background-color: {swatchColor.bg};
+								       outline: {editColorIndex === idx ? `2px solid ${swatchColor.dark}` : 'none'};
+								       outline-offset: 2px;"
+								title="Color {idx + 1}"
+								onclick={() => editColorIndex = idx}
+							></button>
+						{/each}
+					</div>
+
+					<!--
+					  Delete — only shown as active when the category is empty.
+					  When pieces exist, show a message explaining why it's not possible.
+					-->
+					{#if editCat.pieces.length === 0}
+						<form
+							method="POST"
+							action="?/deleteCategory"
+							use:enhance={() => {
+								return async ({ update }) => { editingTabId = null; await update(); };
+							}}
+						>
+							<input type="hidden" name="id" value={editingTabId} />
+							<button
+								type="submit"
+								class="btn btn-xs btn-ghost"
+								style="color: #92400E;"
+								onclick={(e) => {
+									if (!confirm(`Delete category "${editCat.name}"?`)) e.preventDefault();
+								}}
+							>Delete category</button>
+						</form>
+					{:else}
+						<p class="text-xs text-base-content/40">
+							Can't delete — move or delete the {editCat.pieces.length} piece{editCat.pieces.length === 1 ? '' : 's'} first.
+						</p>
+					{/if}
+				</div>
+			{/if}
+		{/if}
+
+		<!-- Add category panel -->
+		{#if showAddCategory}
+			<form
+				method="POST"
+				action="?/addCategory"
+				use:enhance={() => {
+					return async ({ update }) => { showAddCategory = false; newColorIndex = 0; await update(); };
+				}}
+				class="mt-3 p-3 border border-base-200 rounded-xl bg-base-100 flex flex-col gap-3"
+			>
+				<input type="hidden" name="colorIndex" value={newColorIndex} />
+				<div class="flex gap-2 items-center">
+					<input
+						type="text"
+						name="name"
+						placeholder="Category name…"
+						class="input input-bordered input-sm flex-1"
+						required
+						autofocus
+						oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
+						oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
+					/>
+					<button type="submit" class="btn btn-sm btn-primary">Add</button>
+					<button type="button" class="btn btn-sm btn-ghost" onclick={() => showAddCategory = false}>Cancel</button>
+				</div>
+				<!-- Color swatches for the new category -->
+				<div class="flex gap-2 items-center">
+					<span class="text-xs text-base-content/50 shrink-0">Color:</span>
+					{#each PALETTE as swatchColor, idx}
+						<button
+							type="button"
+							class="w-6 h-6 rounded-full transition-all"
+							style="background-color: {swatchColor.bg};
+							       outline: {newColorIndex === idx ? `2px solid ${swatchColor.dark}` : 'none'};
+							       outline-offset: 2px;"
+							title="Color {idx + 1}"
+							onclick={() => newColorIndex = idx}
+						></button>
+					{/each}
+				</div>
+			</form>
+		{/if}
+	</div>
+
+	<!-- Filter row — name search + key dropdown -->
+	<div class="flex gap-2 mb-4 items-center">
+		<input
+			type="text"
+			bind:value={searchQuery}
+			placeholder="Filter by name…"
+			class="input input-bordered input-sm flex-1"
+		/>
+		<select bind:value={filterKey} class="select select-bordered select-sm w-28">
+			<option value="">All keys</option>
+			{#each KEY_OPTIONS as k}
+				<option value={k}>{k}</option>
+			{/each}
+		</select>
+		{#if searchQuery || filterKey}
+			<button
+				type="button"
+				class="btn btn-sm btn-ghost"
+				onclick={() => { searchQuery = ''; filterKey = ''; }}
+			>✕</button>
+		{/if}
 	</div>
 
 	<!-- Inline add form — creates a new piece in the active category -->
 	<form method="POST" action="?/addPiece" use:enhance class="mb-4 flex gap-2 items-center">
-		<input type="hidden" name="categoryId" value={activeCategoryId} />
+		<input type="hidden" name="categoryId" value={activeTabId} />
 		<input
 			type="text"
 			name="name"
@@ -64,7 +362,13 @@
 
 	<!-- Piece list table -->
 	{#if activePieces.length === 0}
-		<p class="text-base-content/50 text-sm">No pieces yet. Add one above.</p>
+		{#if searchQuery || filterKey}
+			<p class="text-base-content/50 text-sm">No pieces match this filter.</p>
+		{:else if !activeCategory}
+			<p class="text-base-content/50 text-sm">No categories yet. Add one above.</p>
+		{:else}
+			<p class="text-base-content/50 text-sm">No pieces yet. Add one above.</p>
+		{/if}
 	{:else}
 		<table class="table table-zebra w-full">
 			<tbody>
@@ -135,7 +439,8 @@
 									<input type="hidden" name="id" value={p.id} />
 									<button
 										type="submit"
-										class="btn btn-sm btn-ghost text-error"
+										class="btn btn-sm btn-ghost"
+										style="color: #92400E;"
 										onclick={(e) => {
 											if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) {
 												e.preventDefault();
@@ -154,6 +459,6 @@
 </main>
 
 <!-- Footer -->
-<div class="max-w-2xl mx-auto mt-8 border-y border-base-300">
+<div class="max-w-2xl mx-auto mt-8 border-y" style="background-color: #FEF3C7; border-color: #D97706;">
 	<img src="/img/footer.png" alt="" class="w-full opacity-50" />
 </div>

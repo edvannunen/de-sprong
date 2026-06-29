@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/*
+  Override DaisyUI's primary color with the amber-dark from our design palette.
+  All btn-primary buttons throughout the app will pick this up automatically.
+  We also set primary-content (text on top of primary) to white for legibility.
+*/
+:root {
+  --color-primary: #92400E;
+  --color-primary-content: #ffffff;
+}
