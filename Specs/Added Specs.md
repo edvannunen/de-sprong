@@ -64,3 +64,7 @@ Use https://github.com/Edvannunen/de-sprong/blob/main/Footer.jpg as the footer f
 * Use https://github.com/Edvannunen/de-sprong/blob/main/img/banner_source.png for the banner of the source page
 * Use https://github.com/Edvannunen/de-sprong/blob/main/img/footer.png for the footer for all pages
 * Use https://github.com/Edvannunen/de-sprong/blob/main/img/favicon.ico as the favicon
+
+# ToDo's
+* Make tabs dynamic. Edit tabs, move tabs, change color
+* 

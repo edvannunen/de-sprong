@@ -56,7 +56,7 @@
 </script>
 
 <!-- Source page banner -->
-<div class="max-w-2xl mx-auto border-y shadow-md">
+<div class="max-w-2xl mx-auto shadow-xl">
 	<img src="/img/banner_source.png" alt="De Sprong" class="w-full" />
 </div>
 
@@ -443,6 +443,6 @@
 </main>
 
 <!-- Footer -->
-<div class="max-w-2xl mx-auto mt-8 border-y">
+<div class="max-w-2xl mx-auto mt-8 shadow-xl">
 	<img src="/img/footer.png" alt="" class="w-full" />
 </div>
