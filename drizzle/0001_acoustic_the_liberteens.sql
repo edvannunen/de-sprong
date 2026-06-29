@@ -1,0 +1,1 @@
+ALTER TABLE `category` ADD `color_index` integer DEFAULT 0 NOT NULL;

@@ -12,8 +12,8 @@ sqlite.pragma('foreign_keys = ON');
 const db = drizzle(sqlite, { schema });
 
 const defaults = [
-	{ name: 'Songs', order: 1 },
-	{ name: 'Exercises', order: 2 }
+	{ name: 'Songs', order: 1, colorIndex: 0 },      // sky blue
+	{ name: 'Exercises', order: 2, colorIndex: 1 }   // violet
 ];
 
 for (const cat of defaults) {
