@@ -6,8 +6,10 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema';
 
-// Open (or create) the SQLite database file in the project root.
-const sqlite = new Database('de-sprong.db');
+// Open (or create) the SQLite database file in a dedicated data/ directory.
+// This directory is mounted as a persistent Docker volume in production so the
+// database survives redeployments.
+const sqlite = new Database('data/de-sprong.db');
 
 // WAL mode improves concurrent read performance (multiple reads alongside one write).
 sqlite.pragma('journal_mode = WAL');
