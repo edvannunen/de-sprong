@@ -7,7 +7,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { eq } from 'drizzle-orm';
 import * as schema from '../src/lib/server/schema';
 
-const sqlite = new Database('de-sprong.db');
+const sqlite = new Database('data/de-sprong.db');
 sqlite.pragma('foreign_keys = ON');
 const db = drizzle(sqlite, { schema });
 
