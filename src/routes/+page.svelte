@@ -93,7 +93,7 @@
 
 <!-- Top banner -->
 <div class="max-w-2xl mx-auto shadow-xl">
-	<img src="/img/banner_piece.png" alt="De Sprong" class="w-full" />
+	<img src="/img/banner.png" alt="De Sprong" class="w-full" />
 </div>
 
 <main class="max-w-2xl mx-auto px-4 py-6">
