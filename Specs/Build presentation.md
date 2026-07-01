@@ -735,9 +735,51 @@ First attempt used `https://` — still broken. Browser DevTools showed the requ
 
 ---
 
+### Auto-fill source name from filename
+
+Small UX improvement: when adding or editing a source and the name field is still empty, picking a file attachment now automatically fills in the filename (without extension) as the source name. If a name was already typed, it stays untouched.
+
+One `onchange` handler on the file input, looking up the sibling name field via `e.currentTarget.form?.elements.namedItem('name')`. Added to both the "add source" form and the "edit source" form.
+
+---
+
+### File upload size limit — the 413 error
+
+Uploading a 1.6 MB photo produced a `413: Payload Too Large` error. The cause: `@sveltejs/adapter-node` defaults to a **512 KB** body size limit, controlled by an environment variable `BODY_SIZE_LIMIT` (parsed at server startup, not baked into the build).
+
+Fix: add `BODY_SIZE_LIMIT=10M` as a runtime environment variable in Coolify. No code change needed. The limit applies per request, not as a total cap on all uploads.
+
+---
+
+### Going live on bier-en-brood.nl/de-sprong
+
+The domain `bier-en-brood.nl` was registered and the app needed to run at the subpath `/de-sprong` (not the root), so other projects can share the same domain later.
+
+Running at a subpath in SvelteKit requires setting `paths.base` in `svelte.config.js`:
+
+```js
+kit: {
+  adapter: adapter(),
+  paths: {
+    base: '/de-sprong'
+  }
+}
+```
+
+Once `base` is set, every hardcoded path in the app needs the prefix — images, internal links, upload URLs, and server-side redirects. In `.svelte` files, `base` is imported from `$app/paths` and interpolated: `src="{base}/img/banner.png"`. In `.server.ts` files, the same import is used in `redirect()` calls. The favicon in `app.html` uses `%sveltekit.assets%` (SvelteKit's built-in placeholder) instead of `base`, since `app.html` is not a Svelte component.
+
+**DNS:** the A-record for `bier-en-brood.nl` was set at Strato (the registrar) pointing to the Hetzner server IP `167.233.148.65`.
+
+**Coolify:** domain set to `https://bier-en-brood.nl`, `ORIGIN` set to `https://bier-en-brood.nl` (just the origin — no path). SSL was issued automatically by Let's Encrypt.
+
+**Deployment detour:** during the DNS propagation wait, a presentation had to happen. The new code (with `/de-sprong` base) was already deployed. The old sslip.io URL gave a 404 because Coolify's Traefik proxy only routes the configured domain. Solution: the app was reachable at `http://y9l6zmpclf2aviur1yogksya.167.233.148.65.sslip.io/de-sprong` — same code, just with the base path appended.
+
+> **Lesson:** when Coolify's domain is changed, Traefik immediately stops routing the old hostname. The `/de-sprong` base path also means the root URL now 404s — the app lives at the subpath, not at `/`.
+
+---
+
 ## What's next
 
-- Domain + SSL (waiting for domain registration)
 - Playwright end-to-end test suite
 - Authentication (later version)
 
@@ -757,4 +799,4 @@ First attempt used `https://` — still broken. Browser DevTools showed the requ
 
 *Built with: SvelteKit · TypeScript · SQLite · Drizzle ORM · Tailwind CSS · DaisyUI · svelte-dnd-action*
 *Developed using: Claude Code (Anthropic) in VSCode*
-*Last updated: 30 June 2026*
+*Last updated: 1 July 2026*
