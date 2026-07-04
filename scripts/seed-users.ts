@@ -10,7 +10,13 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../src/lib/server/schema';
 import { hashPassword } from '../src/lib/server/password';
 
-process.loadEnvFile();
+// Load .env if one exists (local dev). On most PaaS hosts the 4 vars below are
+// injected directly into the environment instead, so a missing file is fine.
+try {
+	process.loadEnvFile();
+} catch {
+	// No .env file — rely on already-set environment variables.
+}
 
 const sqlite = new Database('data/de-sprong.db');
 sqlite.pragma('foreign_keys = ON');
