@@ -140,7 +140,7 @@
 					{@const isEditing = cat.id === editingTabId}
 					<button
 						role="tab"
-						class="flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-all
+						class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all
 						       {isActive ? 'shadow-md' : 'opacity-60 hover:opacity-90'}"
 						style="background-color: {color.bg}; {isActive ? `outline: 2px solid ${color.dark}; outline-offset: 2px;` : ''}"
 						onclick={() => {
@@ -193,7 +193,7 @@
 			<!-- Add category button — outside the DnD zone -->
 			<button
 				type="button"
-				class="flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium border border-dashed border-base-300 text-base-content/50 hover:text-base-content hover:border-base-content/30 transition-all"
+				class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border border-dashed border-base-300 text-base-content/50 hover:text-base-content hover:border-base-content/30 transition-all"
 				onclick={() => { showAddCategory = !showAddCategory; editingTabId = null; }}
 			>+ Category</button>
 		</div>
