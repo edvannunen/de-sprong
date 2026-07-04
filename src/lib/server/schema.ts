@@ -39,6 +39,33 @@ export const piece = sqliteTable('piece', {
 // A source is a study resource linked to a piece: a YouTube/Spotify URL,
 // a file attachment (image or PDF), or just a note with a name and info.
 // Sources can be reordered via drag-and-drop; the order column stores their position.
+// A user account — exactly two rows in practice: the admin ("Ed") and a guest
+// account that can be handed out and later revoked by rotating its password.
+// Both have identical read/write access; isAdmin only gates the /account page.
+export const user = sqliteTable('user', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	username: text('username').notNull().unique(),
+	passwordHash: text('password_hash').notNull(),
+	isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+	createdAt: text('created_at')
+		.notNull()
+		.default(sql`(current_timestamp)`)
+});
+
+// A login session. The id column stores the SHA-256 hash of the session token,
+// never the raw token — the raw token only ever lives in the browser's cookie,
+// so a leaked database dump can't be used to impersonate a logged-in user.
+export const session = sqliteTable('session', {
+	id: text('id').primaryKey(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	expiresAt: text('expires_at').notNull(),
+	createdAt: text('created_at')
+		.notNull()
+		.default(sql`(current_timestamp)`)
+});
+
 export const source = sqliteTable('source', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	// When a piece is deleted, all its sources (and their files) are deleted automatically.

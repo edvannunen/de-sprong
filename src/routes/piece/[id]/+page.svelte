@@ -10,6 +10,7 @@
 	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
 	import { detectLink } from '$lib/linkDetector';
 	import { dndzone } from 'svelte-dnd-action';
+	import UserMenu from '$lib/components/UserMenu.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -57,8 +58,13 @@
 </script>
 
 <!-- Source page banner -->
-<div class="max-w-2xl mx-auto shadow-xl">
+<div class="relative max-w-2xl mx-auto shadow-xl">
 	<img src="{base}/img/banner.png" alt="De Sprong" class="w-full" />
+	{#if data.user}
+		<div class="absolute top-3 right-6 sm:top-4 sm:right-8">
+			<UserMenu user={data.user} />
+		</div>
+	{/if}
 </div>
 
 <main class="max-w-2xl mx-auto px-4 py-6">

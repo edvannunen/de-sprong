@@ -16,7 +16,8 @@
 		"test:e2e": "playwright test",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:seed": "npx tsx scripts/seed.ts"
+		"db:seed": "npx tsx scripts/seed.ts",
+		"db:seed-users": "npx tsx scripts/seed-users.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
