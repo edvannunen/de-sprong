@@ -1,7 +1,8 @@
 // Runs on every request. Populates locals.user from the session cookie and
 // redirects any request that isn't the login page (or a static asset) to /login
-// when there's no logged-in user. Guest and admin share full access — the only
-// role check anywhere in the app lives in the /account route itself.
+// when there's no logged-in user. Guest and admin share full read access and see
+// the same UI; write actions are further restricted to admin in $lib/server/permissions.ts,
+// and the /account route itself is admin-only.
 
 import { redirect, type Handle } from '@sveltejs/kit';
 import { base } from '$app/paths';

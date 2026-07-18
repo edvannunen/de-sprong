@@ -9,6 +9,7 @@
 	import { base } from '$app/paths';
 	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
 	import { dndzone } from 'svelte-dnd-action';
+	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
 	import type { PageData } from './$types';
 
@@ -117,8 +118,15 @@
 		method="POST"
 		action="?/reorderCategories"
 		use:enhance={() => {
-			// invalidateAll: false — avoid a full page reload; the local tabOrder is already correct
-			return async ({ update }) => { await update({ invalidateAll: false }); };
+			return async ({ result, update }) => {
+				if (blockedByGuestGuard(result)) {
+					// Guest can't reorder — reload so tabOrder snaps back to the saved order.
+					await update();
+					return;
+				}
+				// invalidateAll: false — avoid a full page reload; the local tabOrder is already correct
+				await update({ invalidateAll: false });
+			};
 		}}
 	>
 		<input type="hidden" name="ids" bind:value={reorderCatIds} />
@@ -215,7 +223,11 @@
 						method="POST"
 						action="?/updateCategory"
 						use:enhance={() => {
-							return async ({ update }) => { editingTabId = null; await update(); };
+							return async ({ result, update }) => {
+								if (blockedByGuestGuard(result)) { await update(); return; }
+								editingTabId = null;
+								await update();
+							};
 						}}
 						class="flex gap-2 items-center"
 					>
@@ -264,7 +276,11 @@
 							method="POST"
 							action="?/deleteCategory"
 							use:enhance={() => {
-								return async ({ update }) => { editingTabId = null; await update(); };
+								return async ({ result, update }) => {
+									if (blockedByGuestGuard(result)) { await update(); return; }
+									editingTabId = null;
+									await update();
+								};
 							}}
 						>
 							<input type="hidden" name="id" value={editingTabId} />
@@ -292,7 +308,12 @@
 				method="POST"
 				action="?/addCategory"
 				use:enhance={() => {
-					return async ({ update }) => { showAddCategory = false; newColorIndex = 0; await update(); };
+					return async ({ result, update }) => {
+						if (blockedByGuestGuard(result)) { await update(); return; }
+						showAddCategory = false;
+						newColorIndex = 0;
+						await update();
+					};
 				}}
 				class="mt-3 p-3 border border-base-200 rounded-xl bg-base-100 flex flex-col gap-3"
 			>
@@ -354,7 +375,17 @@
 	</div>
 
 	<!-- Inline add form — creates a new piece in the active category -->
-	<form method="POST" action="?/addPiece" use:enhance class="mb-4 flex gap-2 items-center">
+	<form
+		method="POST"
+		action="?/addPiece"
+		use:enhance={() => {
+			return async ({ result, update }) => {
+				blockedByGuestGuard(result);
+				await update();
+			};
+		}}
+		class="mb-4 flex gap-2 items-center"
+	>
 		<input type="hidden" name="categoryId" value={activeTabId} />
 		<input
 			type="text"
@@ -395,7 +426,8 @@
 								method="POST"
 								action="?/editPiece"
 								use:enhance={() => {
-									return async ({ update }) => {
+									return async ({ result, update }) => {
+										if (blockedByGuestGuard(result)) { await update(); return; }
 										// After saving, close edit mode then refresh the page data
 										editingId = null;
 										await update();
@@ -448,7 +480,17 @@
 								onclick={() => editingId = p.id}
 							>Edit</button>
 							<!-- Delete: confirm first, then submit a hidden form -->
-							<form method="POST" action="?/deletePiece" use:enhance class="contents">
+							<form
+								method="POST"
+								action="?/deletePiece"
+								use:enhance={() => {
+									return async ({ result, update }) => {
+										blockedByGuestGuard(result);
+										await update();
+									};
+								}}
+								class="contents"
+							>
 								<input type="hidden" name="id" value={p.id} />
 								<button
 									type="submit"

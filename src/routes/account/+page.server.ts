@@ -1,7 +1,8 @@
-// Admin-only account page — this is the one deliberate role check in the app;
-// every other route treats admin and guest identically. Two actions:
-// changing the admin's own password (requires the current password), and
-// setting a brand-new guest password (the admin doesn't need the old one).
+// Admin-only account page — guests are redirected away entirely, rather than the
+// save/delete restriction applied to piece/category/source actions elsewhere
+// (see $lib/server/permissions.ts). Two actions: changing the admin's own password
+// (requires the current password), and setting a brand-new guest password
+// (the admin doesn't need the old one).
 
 import { db } from '$lib/server/db';
 import { user } from '$lib/server/schema';

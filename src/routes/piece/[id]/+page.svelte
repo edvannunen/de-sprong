@@ -10,6 +10,7 @@
 	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
 	import { detectLink } from '$lib/linkDetector';
 	import { dndzone } from 'svelte-dnd-action';
+	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
 	import type { PageData } from './$types';
 
@@ -22,6 +23,12 @@
 	// Kept in sync with data.sources whenever the page data refreshes.
 	let sources = $state([...data.sources]);
 	$effect(() => { sources = [...data.sources]; });
+
+	// Local, bindable copy of the top-priority checkbox. Kept in sync with
+	// data.piece.topPriority, but also reset explicitly the instant a guest's toggle
+	// is rejected, so the checkbox snaps back immediately rather than waiting on reload.
+	let topPriorityChecked = $state(data.piece.topPriority);
+	$effect(() => { topPriorityChecked = data.piece.topPriority; });
 
 	// Whether the "add source" form is visible (only in edit mode)
 	let showAddSource = $state(false);
@@ -76,7 +83,8 @@
 	{#if editing}
 		<!-- Edit mode: piece fields are inputs -->
 		<form id="piece-form" bind:this={pieceFormEl} method="POST" action="?/editPiece" use:enhance={() => {
-			return async ({ update }) => {
+			return async ({ result, update }) => {
+				if (blockedByGuestGuard(result)) { await update(); return; }
 				editing = false;
 				await update();
 			};
@@ -128,13 +136,26 @@
 			{/if}
 		</div>
 		<!-- Top priority toggle — always visible in view mode, saves immediately on change -->
-		<form method="POST" action="?/toggleTopPriority" use:enhance class="flex items-center gap-2 mb-2">
+		<form
+			method="POST"
+			action="?/toggleTopPriority"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					if (blockedByGuestGuard(result)) {
+						// Snap the checkbox back immediately, don't wait on the reload.
+						topPriorityChecked = data.piece.topPriority;
+					}
+					await update();
+				};
+			}}
+			class="flex items-center gap-2 mb-2"
+		>
 			<input
 				type="checkbox"
 				name="topPriority"
 				id="topPriority-view"
 				class="checkbox checkbox-sm"
-				checked={data.piece.topPriority}
+				bind:checked={topPriorityChecked}
 				onchange={(e) => e.currentTarget.form?.requestSubmit()}
 			/>
 			<label for="topPriority-view" class="text-sm">Top priority</label>
@@ -181,7 +202,14 @@
 		method="POST"
 		action="?/reorderSources"
 		use:enhance={() => {
-			return async ({ update }) => { await update({ invalidateAll: false }); };
+			return async ({ result, update }) => {
+				if (blockedByGuestGuard(result)) {
+					// Guest can't reorder — reload so the local sources array snaps back.
+					await update();
+					return;
+				}
+				await update({ invalidateAll: false });
+			};
 		}}
 	>
 		<input type="hidden" name="ids" bind:value={reorderIds} />
@@ -208,7 +236,10 @@
 						action="?/editSource"
 						enctype="multipart/form-data"
 						use:enhance={() => {
-							return async ({ update }) => { await update(); };
+							return async ({ result, update }) => {
+								blockedByGuestGuard(result);
+								await update();
+							};
 						}}
 					>
 						<input type="hidden" name="id" value={src.id} />
@@ -266,7 +297,17 @@
 								<img src="{base}/uploads/{src.attachmentPath}" alt="" class="h-8 w-8 object-cover rounded border border-base-200" />
 							{/if}
 							<span class="truncate">{src.attachmentFilename}</span>
-							<form method="POST" action="?/deleteAttachment" use:enhance class="inline ml-auto shrink-0">
+							<form
+								method="POST"
+								action="?/deleteAttachment"
+								use:enhance={() => {
+									return async ({ result, update }) => {
+										blockedByGuestGuard(result);
+										await update();
+									};
+								}}
+								class="inline ml-auto shrink-0"
+							>
 								<input type="hidden" name="id" value={src.id} />
 								<button
 									type="submit"
@@ -282,7 +323,17 @@
 					<div class="flex justify-between items-center mt-1">
 						<button type="submit" form="edit-source-{src.id}" class="btn btn-sm btn-primary">Save source</button>
 
-						<form method="POST" action="?/deleteSource" use:enhance class="inline">
+						<form
+							method="POST"
+							action="?/deleteSource"
+							use:enhance={() => {
+								return async ({ result, update }) => {
+									blockedByGuestGuard(result);
+									await update();
+								};
+							}}
+							class="inline"
+						>
 							<input type="hidden" name="id" value={src.id} />
 							<button
 								type="submit"
@@ -377,7 +428,14 @@
 					action="?/addSource"
 					enctype="multipart/form-data"
 					use:enhance={() => {
-						return async ({ update }) => {
+						return async ({ result, update }) => {
+							if (blockedByGuestGuard(result)) {
+								// Keep the form open so the guest doesn't lose what they typed,
+								// and skip the pending piece save — nothing was actually saved.
+								pendingPieceSave = false;
+								await update();
+								return;
+							}
 							showAddSource = false;
 							await update();
 							// If the user clicked the bottom "Save" while this form was open
@@ -474,7 +532,17 @@
 			<button type="button" class="btn btn-primary" onclick={() => editing = true}>Edit</button>
 
 			<!-- Delete piece (with confirmation) -->
-			<form method="POST" action="?/deletePiece" use:enhance class="inline">
+			<form
+				method="POST"
+				action="?/deletePiece"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						blockedByGuestGuard(result);
+						await update();
+					};
+				}}
+				class="inline"
+			>
 				<button
 					type="submit"
 					class="btn btn-ghost" style="color: #92400E;"

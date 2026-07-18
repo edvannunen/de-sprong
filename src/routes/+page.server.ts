@@ -9,6 +9,7 @@ import { category, piece } from '$lib/server/schema';
 import { fail, redirect } from '@sveltejs/kit';
 import { base } from '$app/paths';
 import { asc, eq } from 'drizzle-orm';
+import { requireDeleteAccess, requireSaveAccess } from '$lib/server/permissions';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -38,7 +39,10 @@ export const actions: Actions = {
 
 	// Create a new category with a name and color index.
 	// Assigns the next available order value so it appears last in the tab row.
-	addCategory: async ({ request }) => {
+	addCategory: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const name = (data.get('name') as string)?.trim();
 		const colorIndex = Number(data.get('colorIndex') ?? 0);
@@ -56,7 +60,10 @@ export const actions: Actions = {
 
 	// Update a category's name and/or color index.
 	// Both fields are always submitted together from the edit panel.
-	updateCategory: async ({ request }) => {
+	updateCategory: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 		const name = (data.get('name') as string)?.trim();
@@ -70,7 +77,10 @@ export const actions: Actions = {
 
 	// Reorder categories after a drag-and-drop.
 	// The client submits a comma-separated list of ids in the new desired order.
-	reorderCategories: async ({ request }) => {
+	reorderCategories: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const ids = (data.get('ids') as string ?? '')
 			.split(',')
@@ -84,7 +94,10 @@ export const actions: Actions = {
 
 	// Delete a category — only allowed when it contains no pieces.
 	// The server enforces this rule regardless of what the client shows.
-	deleteCategory: async ({ request }) => {
+	deleteCategory: async ({ request, locals }) => {
+		const blocked = requireDeleteAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 
@@ -102,7 +115,10 @@ export const actions: Actions = {
 	// ── PIECE ACTIONS ──
 
 	// Create a new piece in the given category and navigate to its detail page.
-	addPiece: async ({ request }) => {
+	addPiece: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const name = (data.get('name') as string)?.trim();
 		const categoryId = Number(data.get('categoryId'));
@@ -122,7 +138,10 @@ export const actions: Actions = {
 	},
 
 	// Update a piece's name and key from inline edit on the main page.
-	editPiece: async ({ request }) => {
+	editPiece: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 		const name = (data.get('name') as string)?.trim();
@@ -138,7 +157,10 @@ export const actions: Actions = {
 	},
 
 	// Delete a piece (its sources are removed automatically via SQLite cascade).
-	deletePiece: async ({ request }) => {
+	deletePiece: async ({ request, locals }) => {
+		const blocked = requireDeleteAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 

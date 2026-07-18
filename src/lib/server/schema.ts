@@ -41,7 +41,8 @@ export const piece = sqliteTable('piece', {
 // Sources can be reordered via drag-and-drop; the order column stores their position.
 // A user account — exactly two rows in practice: the admin ("Ed") and a guest
 // account that can be handed out and later revoked by rotating its password.
-// Both have identical read/write access; isAdmin only gates the /account page.
+// Both can view everything, but only the admin can save or delete anything —
+// see $lib/server/permissions.ts — and isAdmin also gates the /account page.
 export const user = sqliteTable('user', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	username: text('username').notNull().unique(),

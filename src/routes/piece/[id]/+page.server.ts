@@ -10,6 +10,7 @@ import { piece, source } from '$lib/server/schema';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { base } from '$app/paths';
 import { asc, eq, max } from 'drizzle-orm';
+import { requireDeleteAccess, requireSaveAccess } from '$lib/server/permissions';
 import type { Actions, PageServerLoad } from './$types';
 
 // ── File upload helpers ──────────────────────────────────────────────────────
@@ -86,7 +87,10 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	// Update the piece's own fields (name, key, info, top priority).
-	editPiece: async ({ request, params }) => {
+	editPiece: async ({ request, params, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const id = Number(params.id);
 		const data = await request.formData();
 		const name = (data.get('name') as string)?.trim();
@@ -107,7 +111,10 @@ export const actions: Actions = {
 	// SQLite cascade removes all its sources.
 	// Note: source files are NOT cleaned up here — cascade delete bypasses our deleteFile helper.
 	// For a single-user local app this is acceptable; the uploads/ dir can be manually cleaned.
-	deletePiece: async ({ params }) => {
+	deletePiece: async ({ params, locals }) => {
+		const blocked = requireDeleteAccess(locals);
+		if (blocked) return blocked;
+
 		const id = Number(params.id);
 		const existing = db.select().from(piece).where(eq(piece.id, id)).get();
 		db.delete(piece).where(eq(piece.id, id)).run();
@@ -115,7 +122,10 @@ export const actions: Actions = {
 	},
 
 	// Add a new source to this piece, optionally with a file attachment.
-	addSource: async ({ request, params }) => {
+	addSource: async ({ request, params, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const pieceId = Number(params.id);
 		// request.formData() handles multipart/form-data automatically — no extra library needed.
 		const data = await request.formData();
@@ -156,7 +166,10 @@ export const actions: Actions = {
 
 	// Update an existing source's fields. A new file upload replaces the old attachment;
 	// submitting without a file leaves the existing attachment unchanged.
-	editSource: async ({ request }) => {
+	editSource: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 		const name = (data.get('name') as string)?.trim();
@@ -200,7 +213,10 @@ export const actions: Actions = {
 	},
 
 	// Delete a source and its attachment file (if any).
-	deleteSource: async ({ request }) => {
+	deleteSource: async ({ request, locals }) => {
+		const blocked = requireDeleteAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 		if (!id) return fail(400, { error: 'Invalid source id' });
@@ -214,7 +230,10 @@ export const actions: Actions = {
 
 	// Remove the attachment from a source without deleting the source itself.
 	// Used by the "Remove" button shown next to existing attachments in edit mode.
-	deleteAttachment: async ({ request }) => {
+	deleteAttachment: async ({ request, locals }) => {
+		const blocked = requireDeleteAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const id = Number(data.get('id'));
 		if (!id) return fail(400, { error: 'Invalid source id' });
@@ -235,7 +254,10 @@ export const actions: Actions = {
 
 	// Toggle top_priority without entering full edit mode.
 	// Called when the user clicks the checkbox in view mode.
-	toggleTopPriority: async ({ request, params }) => {
+	toggleTopPriority: async ({ request, params, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const id = Number(params.id);
 		const data = await request.formData();
 		const topPriority = data.has('topPriority');
@@ -248,7 +270,10 @@ export const actions: Actions = {
 
 	// Update the display order of all sources after a drag-and-drop.
 	// Receives a comma-separated list of source IDs in the new order.
-	reorderSources: async ({ request }) => {
+	reorderSources: async ({ request, locals }) => {
+		const blocked = requireSaveAccess(locals);
+		if (blocked) return blocked;
+
 		const data = await request.formData();
 		const ids = (data.get('ids') as string)
 			.split(',')
