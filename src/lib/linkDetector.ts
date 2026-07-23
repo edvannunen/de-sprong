@@ -10,7 +10,9 @@
 // (confirmed on the VideoLAN forums, July 2026).
 export const VLC_SHORTCUT_NAME = 'Open in VLC';
 
-const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|avi|mkv)$/i;
+// Exported so the source form's file picker can recognize a video filename too
+// (see piece/[id]/+page.svelte) without duplicating the extension list.
+export const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|avi|mkv)$/i;
 
 export type LinkResult =
 	| { type: 'youtube'; embedUrl: string }

@@ -8,7 +8,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
-	import { detectLink } from '$lib/linkDetector';
+	import { detectLink, VIDEO_EXTENSIONS } from '$lib/linkDetector';
 	import { dndzone } from 'svelte-dnd-action';
 	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
@@ -277,7 +277,7 @@
 						<input
 							type="file"
 							name="attachment"
-							accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+							accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
 							class="file-input file-input-bordered file-input-sm w-full mb-2"
 							onchange={(e) => {
 								const file = (e.currentTarget as HTMLInputElement).files?.[0];
@@ -285,6 +285,14 @@
 								const nameInput = e.currentTarget.form?.elements.namedItem('name') as HTMLInputElement | null;
 								if (nameInput && !nameInput.value.trim()) {
 									nameInput.value = file.name.replace(/\.[^.]+$/, '');
+								}
+								// Videos aren't uploaded — just capture the filename for the "Open in
+								// VLC" Shortcut link (see linkDetector.ts) and clear the picker so the
+								// (often huge) video itself never gets submitted.
+								if (file.type.startsWith('video/') || VIDEO_EXTENSIONS.test(file.name)) {
+									const linkInput = e.currentTarget.form?.elements.namedItem('link') as HTMLInputElement | null;
+									if (linkInput) linkInput.value = file.name;
+									e.currentTarget.value = '';
 								}
 							}}
 						/>
@@ -488,7 +496,7 @@
 					<input
 						type="file"
 						name="attachment"
-						accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+						accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
 						class="file-input file-input-bordered file-input-sm w-full mb-2"
 						onchange={(e) => {
 							const file = (e.currentTarget as HTMLInputElement).files?.[0];
@@ -496,6 +504,14 @@
 							const nameInput = e.currentTarget.form?.elements.namedItem('name') as HTMLInputElement | null;
 							if (nameInput && !nameInput.value.trim()) {
 								nameInput.value = file.name.replace(/\.[^.]+$/, '');
+							}
+							// Videos aren't uploaded — just capture the filename for the "Open in
+							// VLC" Shortcut link (see linkDetector.ts) and clear the picker so the
+							// (often huge) video itself never gets submitted.
+							if (file.type.startsWith('video/') || VIDEO_EXTENSIONS.test(file.name)) {
+								const linkInput = e.currentTarget.form?.elements.namedItem('link') as HTMLInputElement | null;
+								if (linkInput) linkInput.value = file.name;
+								e.currentTarget.value = '';
 							}
 						}}
 					/>
