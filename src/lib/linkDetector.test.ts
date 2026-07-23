@@ -51,4 +51,26 @@ describe('detectLink', () => {
 	it('returns none for a non-URL string', () => {
 		expect(detectLink('not a url')).toEqual({ type: 'none' });
 	});
+
+	it('detects a bare mp4 filename as a local video', () => {
+		const result = detectLink('Autumn Leaves.mp4');
+		expect(result).toEqual({
+			type: 'video',
+			filename: 'Autumn Leaves.mp4',
+			shortcutUrl:
+				'shortcuts://run-shortcut?name=Open%20in%20VLC&input=text&text=Autumn%20Leaves.mp4'
+		});
+	});
+
+	it('detects other video extensions (mov, m4v, avi, mkv)', () => {
+		expect(detectLink('clip.mov').type).toBe('video');
+		expect(detectLink('clip.m4v').type).toBe('video');
+		expect(detectLink('clip.avi').type).toBe('video');
+		expect(detectLink('clip.mkv').type).toBe('video');
+	});
+
+	it('treats an http(s) URL ending in .mp4 as a plain link, not a local video', () => {
+		const result = detectLink('https://example.com/video.mp4');
+		expect(result).toEqual({ type: 'link', url: 'https://example.com/video.mp4' });
+	});
 });

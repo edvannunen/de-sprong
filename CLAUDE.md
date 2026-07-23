@@ -82,6 +82,12 @@ Deleting a source also deletes its file from `uploads/`. Deleting a piece cascad
 
 - `youtube.com/watch?v=ID` or `youtu.be/ID` → `<iframe>` embed
 - `open.spotify.com/track/ID` → compact `<iframe>` (80px tall)
+- Bare filename ending in `.mp4`/`.mov`/`.m4v`/`.avi`/`.mkv` (no `http://`) → link that runs the
+  `Open in VLC` iOS Shortcut (`shortcuts://run-shortcut?name=...&input=text&text=<filename>`).
+  Safari can't hand a Files-app-local video to VLC directly (VLC's own URL scheme only accepts
+  network URLs — iOS sandboxing), so this requires a one-time Shortcut set up on each iPad that
+  looks up the filename in a bookmarked folder and opens it in VLC. Only works on the device
+  where the video actually lives.
 - Other URL → clickable `<a>` link
 - Empty → render nothing
 
@@ -111,6 +117,13 @@ Images display as clickable thumbnails (open full file in new tab). PDFs display
 | `img/banner_source.png` | Top of source detail page |
 | `img/footer.png` | Footer on all pages |
 | `img/favicon.ico` | Browser tab icon |
+
+## Deployment
+
+Live at `https://bier-en-brood.nl/de-sprong`. Coolify auto-deploys on every push to `main`
+(GitHub App webhook — no manual deploy step). Server/infra details (SSH access, env vars,
+start command, DB volume path, backups) live in `D:\Dropbox\App\Coolify Hosting Playbook.md`,
+not duplicated here — check that file for anything deploy- or server-related.
 
 ## Build Status (as of 28 June 2026)
 

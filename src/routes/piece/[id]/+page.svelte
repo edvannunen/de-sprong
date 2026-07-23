@@ -271,7 +271,7 @@
 							name="link"
 							value={src.link ?? ''}
 							class="input input-bordered input-sm w-full mb-2"
-							placeholder="YouTube, Spotify, or URL…"
+							placeholder="YouTube, Spotify, URL, or video filename (song.mp4)…"
 						/>
 						<!-- File upload — leave empty to keep the existing attachment -->
 						<input
@@ -384,6 +384,12 @@
 								title={src.name}
 							></iframe>
 						</div>
+					{:else if link.type === 'video'}
+						<div class="mt-2">
+							<!-- Runs the "Open in VLC" Shortcut (see linkDetector.ts) — only works on the
+							     iPad where the file actually lives and the Shortcut is set up. -->
+							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open “{link.filename}” in VLC</a>
+						</div>
 					{:else if link.type === 'link'}
 						<div class="mt-2">
 							<a href={link.url} target="_blank" rel="noopener noreferrer" class="link link-primary text-sm">{link.url}</a>
@@ -477,7 +483,7 @@
 						type="text"
 						name="link"
 						class="input input-bordered input-sm w-full mb-2"
-						placeholder="YouTube, Spotify, or URL…"
+						placeholder="YouTube, Spotify, URL, or video filename (song.mp4)…"
 					/>
 					<input
 						type="file"
