@@ -11,59 +11,8 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { base } from '$app/paths';
 import { asc, eq, max } from 'drizzle-orm';
 import { requireDeleteAccess, requireSaveAccess } from '$lib/server/permissions';
-import { detectLink } from '$lib/linkDetector';
+import { fetchLinkTitle } from '$lib/server/linkTitle';
 import type { Actions, PageServerLoad } from './$types';
-
-// ── Auto-title for YouTube/Spotify links ─────────────────────────────────────
-
-// Undoes the small set of HTML entities that show up in oEmbed/meta-tag text
-// (e.g. "Rock & Roll" is served as "Rock &amp; Roll").
-function unescapeHtml(text: string): string {
-	return text
-		.replace(/&amp;/g, '&')
-		.replace(/&quot;/g, '"')
-		.replace(/&#x27;/g, "'")
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>');
-}
-
-// When the user leaves the source name blank but pastes a YouTube or Spotify link,
-// fetch a sensible title so they don't have to type one in by hand.
-// YouTube: oEmbed already returns the video's title directly.
-// Spotify: oEmbed only returns the track title (no artist), so we scrape the track
-// page's Open Graph tags instead — og:title is the track, og:description starts
-// with "<Artist> · <Album> · Song · <Year>".
-async function fetchLinkTitle(link: string): Promise<string | null> {
-	const detected = detectLink(link);
-	try {
-		if (detected.type === 'youtube') {
-			const res = await fetch(
-				`https://www.youtube.com/oembed?url=${encodeURIComponent(link)}&format=json`
-			);
-			if (!res.ok) return null;
-			const data = (await res.json()) as { title?: unknown };
-			return typeof data.title === 'string' ? unescapeHtml(data.title) : null;
-		}
-
-		if (detected.type === 'spotify') {
-			const res = await fetch(link, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-			if (!res.ok) return null;
-			const html = await res.text();
-			const title = html.match(/<meta property="og:title" content="([^"]*)"/)?.[1];
-			const artist = html
-				.match(/<meta property="og:description" content="([^"]*)"/)?.[1]
-				?.split(' · ')[0];
-			if (title && artist) return `${unescapeHtml(artist)} - ${unescapeHtml(title)}`;
-			return title ? unescapeHtml(title) : null;
-		}
-	} catch {
-		// Network hiccup, oEmbed down, page layout changed, etc. — fall through to
-		// requiring a manual name rather than failing the whole save.
-		return null;
-	}
-
-	return null;
-}
 
 // ── File upload helpers ──────────────────────────────────────────────────────
 

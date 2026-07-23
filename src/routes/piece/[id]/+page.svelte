@@ -62,6 +62,50 @@
 		await Promise.resolve();
 		reorderForm.requestSubmit();
 	}
+
+	// A source's Name is never typed by hand when it comes from YouTube/Spotify — the
+	// user just pastes the link. So as soon as a YouTube/Spotify link is pasted into
+	// Link, look up its title and fill Name automatically (unless the user already
+	// typed something there themselves).
+	async function handleLinkInput(e: Event) {
+		const linkInput = e.currentTarget as HTMLInputElement;
+		const link = linkInput.value.trim();
+		const nameInput = linkInput.form?.elements.namedItem('name') as HTMLInputElement | null;
+
+		// A non-empty link satisfies the "name or link" requirement below even when
+		// it's not a YouTube/Spotify URL we can look up a title for.
+		nameInput?.setCustomValidity('');
+
+		const detected = detectLink(link);
+		if (detected.type !== 'youtube' && detected.type !== 'spotify') return;
+		if (!nameInput || nameInput.value.trim()) return;
+
+		const res = await fetch(`${base}/api/link-title?link=${encodeURIComponent(link)}`);
+		if (!res.ok) return;
+		const data = await res.json();
+		// Re-check before writing: the user may have typed a name, or pasted a
+		// different link, while the lookup was in flight.
+		if (data.title && !nameInput.value.trim() && linkInput.value.trim() === link) {
+			nameInput.value = data.title;
+		}
+	}
+
+	// Name is only required if Link is also empty — a pasted YouTube/Spotify link
+	// fills Name automatically (see handleLinkInput), but the fetch can still be
+	// in flight (or have failed) when the user submits, so this is the fallback
+	// that actually blocks an empty save.
+	function requireNameOrLink(e: SubmitEvent) {
+		const form = e.currentTarget as HTMLFormElement;
+		const nameInput = form.elements.namedItem('name') as HTMLInputElement;
+		const linkInput = form.elements.namedItem('link') as HTMLInputElement | null;
+		if (!nameInput.value.trim() && !linkInput?.value.trim()) {
+			nameInput.setCustomValidity('Please fill in this field');
+			nameInput.reportValidity();
+			e.preventDefault();
+		} else {
+			nameInput.setCustomValidity('');
+		}
+	}
 </script>
 
 <!-- Source page banner -->
@@ -235,6 +279,7 @@
 						method="POST"
 						action="?/editSource"
 						enctype="multipart/form-data"
+						onsubmit={requireNameOrLink}
 						use:enhance={() => {
 							return async ({ result, update }) => {
 								blockedByGuestGuard(result);
@@ -249,7 +294,6 @@
 								name="name"
 								value={src.name}
 								class="input input-bordered input-sm font-bold flex-1"
-								required
 								oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
 								oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
 							/>
@@ -272,6 +316,7 @@
 							value={src.link ?? ''}
 							class="input input-bordered input-sm w-full mb-2"
 							placeholder="YouTube, Spotify, URL, or video filename (song.mp4)…"
+							oninput={handleLinkInput}
 						/>
 						<!-- File upload — leave empty to keep the existing attachment -->
 						<input
@@ -441,6 +486,7 @@
 					method="POST"
 					action="?/addSource"
 					enctype="multipart/form-data"
+					onsubmit={requireNameOrLink}
 					use:enhance={() => {
 						return async ({ result, update }) => {
 							if (blockedByGuestGuard(result)) {
@@ -469,7 +515,6 @@
 							name="name"
 							class="input input-bordered input-sm flex-1"
 							placeholder="Name"
-							required
 							autofocus
 							oninvalid={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity('Please fill in this field'); }}
 							oninput={(e) => { (e.currentTarget as HTMLInputElement).setCustomValidity(''); }}
@@ -492,6 +537,7 @@
 						name="link"
 						class="input input-bordered input-sm w-full mb-2"
 						placeholder="YouTube, Spotify, URL, or video filename (song.mp4)…"
+						oninput={handleLinkInput}
 					/>
 					<input
 						type="file"
