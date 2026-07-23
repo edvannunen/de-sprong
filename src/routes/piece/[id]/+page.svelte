@@ -396,7 +396,7 @@
 						<div class="mt-2">
 							<!-- Runs the "Open in VLC" Shortcut (see linkDetector.ts) — only works on the
 							     iPad where the file actually lives and the Shortcut is set up. -->
-							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open “{link.filename}” in VLC</a>
+							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open “{link.filename}”</a>
 						</div>
 					{:else if link.type === 'link'}
 						<div class="mt-2">
