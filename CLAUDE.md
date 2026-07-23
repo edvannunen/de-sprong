@@ -82,12 +82,24 @@ Deleting a source also deletes its file from `uploads/`. Deleting a piece cascad
 
 - `youtube.com/watch?v=ID` or `youtu.be/ID` → `<iframe>` embed
 - `open.spotify.com/track/ID` → compact `<iframe>` (80px tall)
-- Bare filename ending in `.mp4`/`.mov`/`.m4v`/`.avi`/`.mkv` (no `http://`) → link that runs the
-  `Open in VLC` iOS Shortcut (`shortcuts://run-shortcut?name=...&input=text&text=<filename>`).
-  Safari can't hand a Files-app-local video to VLC directly (VLC's own URL scheme only accepts
-  network URLs — iOS sandboxing), so this requires a one-time Shortcut set up on each iPad that
-  looks up the filename in a bookmarked folder and opens it in VLC. Only works on the device
-  where the video actually lives.
+- Bare filename ending in `.mp4`/`.mov`/`.m4v`/`.avi`/`.mkv` (no `http://`) → link that runs an
+  iOS Shortcut named exactly `Open in VLC`
+  (`shortcuts://run-shortcut?name=...&input=text&text=<filename>`). Only works on the device
+  where the video actually lives, and only for videos that live inside **VLC's own storage**
+  (Files app → *Op mijn iPad* → *VLC*) — that's the only location Shortcuts can retrieve a file
+  from by filename alone (`Haal bestand op uit VLC met pad`).
+  - The Shortcut itself: `Haal bestand op uit VLC met pad [Invoer opdracht]` →
+    `Toon [Bestand] in 'Snelle weergave'` (Quick Look). That's the whole thing — it ends on the
+    Quick Look preview screen (play/pause + ±10s skip).
+  - **Do not tap the "VLC" pill button inside that Quick Look preview.** iOS's "Open In"
+    hand-off always imports a fresh copy into the target app — even when the file already lives
+    in that app's own storage — so tapping it re-imports the video into VLC every time,
+    cluttering VLC's library with duplicate entries (confirmed July 2026, no workaround found:
+    Share Sheet doesn't list VLC at all for a file it already owns, and Infuse — the most
+    likely alternative — has the same network-URL-only `x-callback` limitation as VLC, so
+    switching players doesn't avoid this either). Quick Look's own controls are the intended,
+    non-duplicating way to watch the video from this link. For VLC-specific features
+    (loop, slow-motion, speed control), open VLC manually and browse to the clip yourself.
 - Other URL → clickable `<a>` link
 - Empty → render nothing
 
