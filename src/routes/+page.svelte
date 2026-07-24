@@ -11,6 +11,7 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
+	import KeySignature from '$lib/components/KeySignature.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -471,7 +472,10 @@
 							{/if}
 						</div>
 						{#if p.key}
-							<span class="badge badge-outline badge-sm font-mono shrink-0">{p.key}</span>
+							<span class="flex items-center gap-1 shrink-0">
+								<span class="badge badge-outline badge-sm font-mono">{p.key}</span>
+								<KeySignature key={p.key} height={36} />
+							</span>
 						{/if}
 						<div class="flex items-center gap-1 shrink-0">
 							<button

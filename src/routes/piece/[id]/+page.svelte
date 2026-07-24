@@ -12,6 +12,7 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
+	import KeySignature from '$lib/components/KeySignature.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -176,7 +177,10 @@
 				{data.piece.name}
 			</h1>
 			{#if data.piece.key}
-				<span class="badge badge-outline badge-lg font-mono mt-1 shrink-0">{data.piece.key}</span>
+				<span class="flex items-center gap-1.5 mt-1 shrink-0">
+					<span class="badge badge-outline badge-lg font-mono">{data.piece.key}</span>
+					<KeySignature key={data.piece.key} height={36} />
+				</span>
 			{/if}
 		</div>
 		<!-- Top priority toggle — always visible in view mode, saves immediately on change -->
