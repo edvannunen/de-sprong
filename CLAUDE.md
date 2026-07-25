@@ -134,7 +134,7 @@ Images display as clickable thumbnails (open full file in new tab). PDFs display
 
 Live at `https://bier-en-brood.nl/de-sprong`. Coolify auto-deploys on every push to `main`
 (GitHub App webhook — no manual deploy step). Server/infra details (SSH access, env vars,
-start command, DB volume path, backups) live in `D:\Dropbox\App\Coolify Hosting Playbook.md`,
+start command, DB volume path, backups) live in `../Coolify Hosting Playbook.md`,
 not duplicated here — check that file for anything deploy- or server-related.
 
 ## Build Status (as of 28 June 2026)
