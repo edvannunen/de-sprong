@@ -100,6 +100,12 @@ Deleting a source also deletes its file from `uploads/`. Deleting a piece cascad
     switching players doesn't avoid this either). Quick Look's own controls are the intended,
     non-duplicating way to watch the video from this link. For VLC-specific features
     (loop, slow-motion, speed control), open VLC manually and browse to the clip yourself.
+- `irealpro:<song title>` (e.g. `irealpro:Autumn Leaves`) → link that opens iReal Pro's search
+  window pre-filled with the title (`irealb://search?<percent-encoded title>`, per
+  [iReal Pro's developer docs](https://www.irealpro.com/developer-docs/)). If a song with a
+  matching title is already in the user's iReal Pro library, it opens directly instead of
+  showing search results. There's no ID-based deep link — the title has to match what's stored
+  in iReal Pro, and this only works on a device with the app installed.
 - Other URL → clickable `<a>` link
 - Empty → render nothing
 

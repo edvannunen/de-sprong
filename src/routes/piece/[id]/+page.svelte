@@ -447,6 +447,13 @@
 							     iPad where the file actually lives and the Shortcut is set up. -->
 							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open “{link.filename}”</a>
 						</div>
+					{:else if link.type === 'irealpro'}
+						<div class="mt-2">
+							<!-- Opens iReal Pro's search window pre-filled with the title (see
+							     linkDetector.ts) — only works on a device with iReal Pro installed,
+							     and only finds the song if its title matches what's in the app. -->
+							<a href={link.searchUrl} class="link link-primary text-sm">♪ Open “{link.title}” in iReal Pro</a>
+						</div>
 					{:else if link.type === 'link'}
 						<div class="mt-2">
 							<a href={link.url} target="_blank" rel="noopener noreferrer" class="link link-primary text-sm">{link.url}</a>

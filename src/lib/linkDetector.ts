@@ -14,10 +14,19 @@ export const VLC_SHORTCUT_NAME = 'Open in VLC';
 // (see piece/[id]/+page.svelte) without duplicating the extension list.
 export const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|avi|mkv)$/i;
 
+// Prefix that triggers an iReal Pro search-by-title link, e.g. "irealpro:Autumn
+// Leaves". iReal Pro's own URL scheme for this is `irealb://search?<title>`
+// (per irealpro.com/developer-docs) — opening it launches the app's search
+// window pre-filled with the title, and opens the song directly if it's
+// already in the user's library. There's no ID-based deep link, so the title
+// has to match what's stored in iReal Pro.
+export const IREALPRO_PREFIX = 'irealpro:';
+
 export type LinkResult =
 	| { type: 'youtube'; embedUrl: string }
 	| { type: 'spotify'; embedUrl: string }
 	| { type: 'video'; filename: string; shortcutUrl: string }
+	| { type: 'irealpro'; title: string; searchUrl: string }
 	| { type: 'link'; url: string }
 	| { type: 'none' };
 
@@ -41,6 +50,14 @@ export function detectLink(raw: string | null | undefined): LinkResult {
 	if (!url.startsWith('http://') && !url.startsWith('https://') && VIDEO_EXTENSIONS.test(url)) {
 		const shortcutUrl = `shortcuts://run-shortcut?name=${encodeURIComponent(VLC_SHORTCUT_NAME)}&input=text&text=${encodeURIComponent(url)}`;
 		return { type: 'video', filename: url, shortcutUrl };
+	}
+
+	// iReal Pro search-by-title: "irealpro:<song title>"
+	if (url.toLowerCase().startsWith(IREALPRO_PREFIX)) {
+		const title = url.slice(IREALPRO_PREFIX.length).trim();
+		if (title) {
+			return { type: 'irealpro', title, searchUrl: `irealb://search?${encodeURIComponent(title)}` };
+		}
 	}
 
 	// Any other URL

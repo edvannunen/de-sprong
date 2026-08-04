@@ -73,4 +73,35 @@ describe('detectLink', () => {
 		const result = detectLink('https://example.com/video.mp4');
 		expect(result).toEqual({ type: 'link', url: 'https://example.com/video.mp4' });
 	});
+
+	it('detects an irealpro: prefix as an iReal Pro search link', () => {
+		const result = detectLink('irealpro:Autumn Leaves');
+		expect(result).toEqual({
+			type: 'irealpro',
+			title: 'Autumn Leaves',
+			searchUrl: 'irealb://search?Autumn%20Leaves'
+		});
+	});
+
+	it('matches the irealpro: prefix case-insensitively', () => {
+		const result = detectLink('IrealPro:Blue Bossa');
+		expect(result).toEqual({
+			type: 'irealpro',
+			title: 'Blue Bossa',
+			searchUrl: 'irealb://search?Blue%20Bossa'
+		});
+	});
+
+	it('percent-encodes special characters in the title', () => {
+		const result = detectLink("irealpro:Well You Needn't");
+		expect(result).toEqual({
+			type: 'irealpro',
+			title: "Well You Needn't",
+			searchUrl: "irealb://search?Well%20You%20Needn't"
+		});
+	});
+
+	it('returns none for "irealpro:" with no title', () => {
+		expect(detectLink('irealpro:')).toEqual({ type: 'none' });
+	});
 });
