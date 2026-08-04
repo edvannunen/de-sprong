@@ -176,47 +176,47 @@
 				<span class="text-amber-600 mr-1">{data.piece.topPriority ? '♩' : '♫'}</span>
 				{data.piece.name}
 			</h1>
-			<div class="flex flex-col items-end gap-1 mt-1 shrink-0">
-				{#if data.piece.key}
-					<span class="flex items-center gap-1.5">
-						<span class="badge badge-outline badge-lg font-mono">{data.piece.key}</span>
-						<KeySignature key={data.piece.key} height={36} />
-					</span>
-				{/if}
-				<!-- Opens iReal Pro's search window pre-filled with the piece's name (see
-				     linkDetector.ts) — only works on a device with iReal Pro installed, and
-				     only finds the song if this name matches its title in iReal Pro. Doesn't
-				     open the song directly; the user still taps the matching result. -->
-				<a href={irealProSearchUrl(data.piece.name)} class="btn btn-ghost btn-xs gap-1">
-					♪ iReal Pro
-				</a>
-			</div>
+			{#if data.piece.key}
+				<span class="flex items-center gap-1.5 mt-1 shrink-0">
+					<span class="badge badge-outline badge-lg font-mono">{data.piece.key}</span>
+					<KeySignature key={data.piece.key} height={36} />
+				</span>
+			{/if}
 		</div>
-		<!-- Top priority toggle — always visible in view mode, saves immediately on change -->
-		<form
-			method="POST"
-			action="?/toggleTopPriority"
-			use:enhance={() => {
-				return async ({ result, update }) => {
-					if (blockedByGuestGuard(result)) {
-						// Snap the checkbox back immediately, don't wait on the reload.
-						topPriorityChecked = data.piece.topPriority;
-					}
-					await update();
-				};
-			}}
-			class="flex items-center gap-2 mb-2"
-		>
-			<input
-				type="checkbox"
-				name="topPriority"
-				id="topPriority-view"
-				class="checkbox checkbox-sm"
-				bind:checked={topPriorityChecked}
-				onchange={(e) => e.currentTarget.form?.requestSubmit()}
-			/>
-			<label for="topPriority-view" class="text-sm">Top priority</label>
-		</form>
+		<!-- Top priority toggle (saves immediately on change) + iReal Pro button, same line -->
+		<div class="flex items-center justify-between gap-2 mb-2">
+			<form
+				method="POST"
+				action="?/toggleTopPriority"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						if (blockedByGuestGuard(result)) {
+							// Snap the checkbox back immediately, don't wait on the reload.
+							topPriorityChecked = data.piece.topPriority;
+						}
+						await update();
+					};
+				}}
+				class="flex items-center gap-2"
+			>
+				<input
+					type="checkbox"
+					name="topPriority"
+					id="topPriority-view"
+					class="checkbox checkbox-sm"
+					bind:checked={topPriorityChecked}
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				<label for="topPriority-view" class="text-sm">Top priority</label>
+			</form>
+			<!-- Opens iReal Pro's search window pre-filled with the piece's name (see
+			     linkDetector.ts) — only works on a device with iReal Pro installed, and
+			     only finds the song if this name matches its title in iReal Pro. Doesn't
+			     open the song directly; the user still taps the matching result. iOS also
+			     shows its own "Open in iReal Pro?" confirmation first — that's a system-level
+			     prompt for custom URL schemes and can't be suppressed from the page. -->
+			<a href={irealProSearchUrl(data.piece.name)} class="btn btn-sm btn-primary">♪ iReal Pro</a>
+		</div>
 		{#if data.piece.info}
 			<p class="text-base-content/70 mb-4 whitespace-pre-wrap">{data.piece.info}</p>
 		{:else}
