@@ -100,14 +100,21 @@ Deleting a source also deletes its file from `uploads/`. Deleting a piece cascad
     switching players doesn't avoid this either). Quick Look's own controls are the intended,
     non-duplicating way to watch the video from this link. For VLC-specific features
     (loop, slow-motion, speed control), open VLC manually and browse to the clip yourself.
-- `irealpro:<song title>` (e.g. `irealpro:Autumn Leaves`) → link that opens iReal Pro's search
-  window pre-filled with the title (`irealb://search?<percent-encoded title>`, per
-  [iReal Pro's developer docs](https://www.irealpro.com/developer-docs/)). If a song with a
-  matching title is already in the user's iReal Pro library, it opens directly instead of
-  showing search results. There's no ID-based deep link — the title has to match what's stored
-  in iReal Pro, and this only works on a device with the app installed.
 - Other URL → clickable `<a>` link
 - Empty → render nothing
+
+### iReal Pro Link (piece detail page)
+
+Every piece shows a "♪ iReal Pro" button below the Key/Clef badge (top right of the piece
+header), built by `irealProSearchUrl()` in `src/lib/linkDetector.ts`. It opens
+`irealb://search?<percent-encoded piece name>` — iReal Pro's documented search-by-title scheme
+(see [developer docs](https://www.irealpro.com/developer-docs/)). Confirmed on-device (Aug
+2026): this only opens iReal Pro's search results pre-filled with the title; the user still has
+to tap the matching song themselves. iReal Pro has a separate scheme
+(`irealbook://Title=Composer=Style=Key=Chords`) that *does* open an existing song directly, but
+only when used for full chart import/export — not applicable here since the app doesn't store
+composer/style/chords data. There's no ID-based deep link, so this only works when the piece
+name matches the song's title in iReal Pro, and only on a device with the app installed.
 
 ### File Attachments
 

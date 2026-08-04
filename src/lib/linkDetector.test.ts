@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectLink } from './linkDetector';
+import { detectLink, irealProSearchUrl } from './linkDetector';
 
 describe('detectLink', () => {
 	it('returns none for null', () => {
@@ -73,35 +73,14 @@ describe('detectLink', () => {
 		const result = detectLink('https://example.com/video.mp4');
 		expect(result).toEqual({ type: 'link', url: 'https://example.com/video.mp4' });
 	});
+});
 
-	it('detects an irealpro: prefix as an iReal Pro search link', () => {
-		const result = detectLink('irealpro:Autumn Leaves');
-		expect(result).toEqual({
-			type: 'irealpro',
-			title: 'Autumn Leaves',
-			searchUrl: 'irealb://search?Autumn%20Leaves'
-		});
-	});
-
-	it('matches the irealpro: prefix case-insensitively', () => {
-		const result = detectLink('IrealPro:Blue Bossa');
-		expect(result).toEqual({
-			type: 'irealpro',
-			title: 'Blue Bossa',
-			searchUrl: 'irealb://search?Blue%20Bossa'
-		});
+describe('irealProSearchUrl', () => {
+	it('builds an iReal Pro search URL from a title', () => {
+		expect(irealProSearchUrl('Autumn Leaves')).toBe('irealb://search?Autumn%20Leaves');
 	});
 
 	it('percent-encodes special characters in the title', () => {
-		const result = detectLink("irealpro:Well You Needn't");
-		expect(result).toEqual({
-			type: 'irealpro',
-			title: "Well You Needn't",
-			searchUrl: "irealb://search?Well%20You%20Needn't"
-		});
-	});
-
-	it('returns none for "irealpro:" with no title', () => {
-		expect(detectLink('irealpro:')).toEqual({ type: 'none' });
+		expect(irealProSearchUrl("Well You Needn't")).toBe("irealb://search?Well%20You%20Needn't");
 	});
 });

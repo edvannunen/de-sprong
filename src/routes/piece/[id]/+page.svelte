@@ -8,7 +8,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
-	import { detectLink, VIDEO_EXTENSIONS } from '$lib/linkDetector';
+	import { detectLink, irealProSearchUrl, VIDEO_EXTENSIONS } from '$lib/linkDetector';
 	import { dndzone } from 'svelte-dnd-action';
 	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
@@ -176,12 +176,21 @@
 				<span class="text-amber-600 mr-1">{data.piece.topPriority ? '♩' : '♫'}</span>
 				{data.piece.name}
 			</h1>
-			{#if data.piece.key}
-				<span class="flex items-center gap-1.5 mt-1 shrink-0">
-					<span class="badge badge-outline badge-lg font-mono">{data.piece.key}</span>
-					<KeySignature key={data.piece.key} height={36} />
-				</span>
-			{/if}
+			<div class="flex flex-col items-end gap-1 mt-1 shrink-0">
+				{#if data.piece.key}
+					<span class="flex items-center gap-1.5">
+						<span class="badge badge-outline badge-lg font-mono">{data.piece.key}</span>
+						<KeySignature key={data.piece.key} height={36} />
+					</span>
+				{/if}
+				<!-- Opens iReal Pro's search window pre-filled with the piece's name (see
+				     linkDetector.ts) — only works on a device with iReal Pro installed, and
+				     only finds the song if this name matches its title in iReal Pro. Doesn't
+				     open the song directly; the user still taps the matching result. -->
+				<a href={irealProSearchUrl(data.piece.name)} class="btn btn-ghost btn-xs gap-1">
+					♪ iReal Pro
+				</a>
+			</div>
 		</div>
 		<!-- Top priority toggle — always visible in view mode, saves immediately on change -->
 		<form
@@ -446,13 +455,6 @@
 							<!-- Runs the "Open in VLC" Shortcut (see linkDetector.ts) — only works on the
 							     iPad where the file actually lives and the Shortcut is set up. -->
 							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open “{link.filename}”</a>
-						</div>
-					{:else if link.type === 'irealpro'}
-						<div class="mt-2">
-							<!-- Opens iReal Pro's search window pre-filled with the title (see
-							     linkDetector.ts) — only works on a device with iReal Pro installed,
-							     and only finds the song if its title matches what's in the app. -->
-							<a href={link.searchUrl} class="link link-primary text-sm">♪ Open “{link.title}” in iReal Pro</a>
 						</div>
 					{:else if link.type === 'link'}
 						<div class="mt-2">
