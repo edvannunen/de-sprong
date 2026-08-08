@@ -296,7 +296,13 @@
 						use:enhance={() => {
 							return async ({ result, update }) => {
 								blockedByGuestGuard(result);
-								await update();
+								// This form stays mounted after a successful save (unlike the
+								// piece-edit/add-source forms, which unmount by flipping
+								// editing/showAddSource first) — the native form.reset() that
+								// update() runs by default would visibly blank every field,
+								// since they're one-way `value={src.x}` bindings with no real
+								// defaultValue for reset() to fall back to.
+								await update({ reset: false });
 							};
 						}}
 					>
