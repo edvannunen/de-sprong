@@ -341,7 +341,7 @@
 						<input
 							type="file"
 							name="attachment"
-							accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
+							accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a,audio/wav,audio/x-wav,audio/aac,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
 							class="file-input file-input-bordered file-input-sm w-full mb-2"
 							onchange={(e) => {
 								const file = (e.currentTarget as HTMLInputElement).files?.[0];
@@ -470,7 +470,9 @@
 						<div class="h-4"></div>
 					{/if}
 
-					<!-- Attachment: image shows as a clickable thumbnail; PDF shows as a filename link -->
+					<!-- Attachment: image shows as a clickable thumbnail; PDF/audio show as a filename link.
+					     For audio, Safari/iOS opens direct links to audio files in its own built-in
+					     player UI — no special app or Shortcut needed, unlike the video case above. -->
 					{#if src.attachmentType === 'image'}
 						<div class="mt-2">
 							<a href="{base}/uploads/{src.attachmentPath}" target="_blank" rel="noopener noreferrer">
@@ -481,14 +483,14 @@
 								/>
 							</a>
 						</div>
-					{:else if src.attachmentType === 'pdf'}
+					{:else if src.attachmentType === 'pdf' || src.attachmentType === 'audio'}
 						<div class="mt-2">
 							<a
 								href="{base}/uploads/{src.attachmentPath}"
 								target="_blank"
 								rel="noopener noreferrer"
 								class="link link-primary text-sm"
-							>{src.attachmentFilename}</a>
+							>{src.attachmentType === 'audio' ? '♫ ' : ''}{src.attachmentFilename}</a>
 						</div>
 					{/if}
 				{/if}
@@ -561,7 +563,7 @@
 					<input
 						type="file"
 						name="attachment"
-						accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
+						accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a,audio/wav,audio/x-wav,audio/aac,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska"
 						class="file-input file-input-bordered file-input-sm w-full mb-2"
 						onchange={(e) => {
 							const file = (e.currentTarget as HTMLInputElement).files?.[0];

@@ -78,7 +78,7 @@ export const source = sqliteTable('source', {
 	key: text('key'),
 	link: text('link'), // YouTube, Spotify, or any URL — converted to embed in the UI
 	attachmentPath: text('attachment_path'), // server filesystem path to the uploaded file
-	attachmentType: text('attachment_type'), // "image" or "pdf"
+	attachmentType: text('attachment_type'), // "image", "pdf", or "audio"
 	attachmentFilename: text('attachment_filename'), // original filename shown to the user
 	order: integer('order').notNull().default(0),
 	createdAt: text('created_at')
