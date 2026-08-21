@@ -8,7 +8,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { KEY_OPTIONS, PALETTE } from '$lib/constants';
-	import { detectLink, irealProSearchUrl, VIDEO_EXTENSIONS } from '$lib/linkDetector';
+	import { detectLink, irealProSearchUrl, VIDEO_EXTENSIONS, AUDIO_EXTENSIONS } from '$lib/linkDetector';
 	import { dndzone } from 'svelte-dnd-action';
 	import { blockedByGuestGuard } from '$lib/formGuard';
 	import UserMenu from '$lib/components/UserMenu.svelte';
@@ -334,7 +334,7 @@
 							name="link"
 							value={src.link ?? ''}
 							class="input input-bordered input-sm w-full mb-2"
-							placeholder="YouTube, Spotify, URL, or video filename (song.mp4)…"
+							placeholder="YouTube, Spotify, URL, or filename (song.mp4, song.mp3)…"
 							oninput={handleLinkInput}
 						/>
 						<!-- File upload — leave empty to keep the existing attachment -->
@@ -350,10 +350,17 @@
 								if (nameInput && !nameInput.value.trim()) {
 									nameInput.value = file.name.replace(/\.[^.]+$/, '');
 								}
-								// Videos aren't uploaded — just capture the filename for the "Open in
-								// VLC" Shortcut link (see linkDetector.ts) and clear the picker so the
-								// (often huge) video itself never gets submitted.
-								if (file.type.startsWith('video/') || VIDEO_EXTENSIONS.test(file.name)) {
+								// Videos and audio aren't uploaded — the files always live on the iPad
+								// already, so uploading a copy to the server just wastes time. Instead
+								// capture the filename for the "Open in VLC" / "Open Audio" Shortcut link
+								// (see linkDetector.ts) and clear the picker so the file itself is never
+								// submitted.
+								if (
+									file.type.startsWith('video/') ||
+									VIDEO_EXTENSIONS.test(file.name) ||
+									file.type.startsWith('audio/') ||
+									AUDIO_EXTENSIONS.test(file.name)
+								) {
 									const linkInput = e.currentTarget.form?.elements.namedItem('link') as HTMLInputElement | null;
 									if (linkInput) linkInput.value = file.name;
 									e.currentTarget.value = '';
@@ -460,7 +467,14 @@
 						<div class="mt-2">
 							<!-- Runs the "Open in VLC" Shortcut (see linkDetector.ts) — only works on the
 							     iPad where the file actually lives and the Shortcut is set up. -->
-							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open “{link.filename}”</a>
+							<a href={link.shortcutUrl} class="link link-primary text-sm">▶ Open "{link.filename}"</a>
+						</div>
+					{:else if link.type === 'audio'}
+						<div class="mt-2">
+							<!-- Runs the "Open Audio" Shortcut (see linkDetector.ts) — only works on the
+							     iPad where the file actually lives (Files → Op mijn iPad → Pianoles en
+							     jazz) and the Shortcut is set up. -->
+							<a href={link.shortcutUrl} class="link link-primary text-sm">♫ Open "{link.filename}"</a>
 						</div>
 					{:else if link.type === 'link'}
 						<div class="mt-2">
@@ -470,9 +484,7 @@
 						<div class="h-4"></div>
 					{/if}
 
-					<!-- Attachment: image shows as a clickable thumbnail; PDF/audio show as a filename link.
-					     For audio, Safari/iOS opens direct links to audio files in its own built-in
-					     player UI — no special app or Shortcut needed, unlike the video case above. -->
+					<!-- Attachment: image shows as a clickable thumbnail; PDF shows as a filename link -->
 					{#if src.attachmentType === 'image'}
 						<div class="mt-2">
 							<a href="{base}/uploads/{src.attachmentPath}" target="_blank" rel="noopener noreferrer">
@@ -483,14 +495,14 @@
 								/>
 							</a>
 						</div>
-					{:else if src.attachmentType === 'pdf' || src.attachmentType === 'audio'}
+					{:else if src.attachmentType === 'pdf'}
 						<div class="mt-2">
 							<a
 								href="{base}/uploads/{src.attachmentPath}"
 								target="_blank"
 								rel="noopener noreferrer"
 								class="link link-primary text-sm"
-							>{src.attachmentType === 'audio' ? '♫ ' : ''}{src.attachmentFilename}</a>
+							>{src.attachmentFilename}</a>
 						</div>
 					{/if}
 				{/if}
@@ -557,7 +569,7 @@
 						type="text"
 						name="link"
 						class="input input-bordered input-sm w-full mb-2"
-						placeholder="YouTube, Spotify, URL, or video filename (song.mp4)…"
+						placeholder="YouTube, Spotify, URL, or filename (song.mp4, song.mp3)…"
 						oninput={handleLinkInput}
 					/>
 					<input
@@ -572,10 +584,17 @@
 							if (nameInput && !nameInput.value.trim()) {
 								nameInput.value = file.name.replace(/\.[^.]+$/, '');
 							}
-							// Videos aren't uploaded — just capture the filename for the "Open in
-							// VLC" Shortcut link (see linkDetector.ts) and clear the picker so the
-							// (often huge) video itself never gets submitted.
-							if (file.type.startsWith('video/') || VIDEO_EXTENSIONS.test(file.name)) {
+							// Videos and audio aren't uploaded — the files always live on the iPad
+							// already, so uploading a copy to the server just wastes time. Instead
+							// capture the filename for the "Open in VLC" / "Open Audio" Shortcut link
+							// (see linkDetector.ts) and clear the picker so the file itself is never
+							// submitted.
+							if (
+								file.type.startsWith('video/') ||
+								VIDEO_EXTENSIONS.test(file.name) ||
+								file.type.startsWith('audio/') ||
+								AUDIO_EXTENSIONS.test(file.name)
+							) {
 								const linkInput = e.currentTarget.form?.elements.namedItem('link') as HTMLInputElement | null;
 								if (linkInput) linkInput.value = file.name;
 								e.currentTarget.value = '';

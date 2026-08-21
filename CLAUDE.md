@@ -100,6 +100,15 @@ Deleting a source also deletes its file from `uploads/`. Deleting a piece cascad
     switching players doesn't avoid this either). Quick Look's own controls are the intended,
     non-duplicating way to watch the video from this link. For VLC-specific features
     (loop, slow-motion, speed control), open VLC manually and browse to the clip yourself.
+- Bare filename ending in `.mp3`/`.m4a`/`.wav`/`.aac` (no `http://`) → link that runs an iOS
+  Shortcut named exactly `Open Audio`
+  (`shortcuts://run-shortcut?name=...&input=text&text=<filename>`). Same idea as the video case
+  above, but for audio there's no separate player app to hand off to and no duplicate-import
+  gotcha: the file must live in Files → *Op mijn iPad* → *Pianoles en jazz*, and the Shortcut
+  just fetches it by filename and shows it in Quick Look, which plays audio directly (its own
+  play/pause + skip controls). Audio files are never uploaded to the server — like video, they
+  always live on the device already, so the source's "attachment" upload/download path is only
+  used for images and PDFs.
 - Other URL → clickable `<a>` link
 - Empty → render nothing
 

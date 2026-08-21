@@ -1,7 +1,7 @@
 // Converts a raw URL string into a typed result that tells the UI how to render it.
 // YouTube and Spotify links become embeds; anything else becomes a plain link.
-// A bare video filename (no http://) is treated as a reference to a file that
-// already lives on the iPad — see the "video" case below.
+// A bare video or audio filename (no http://) is treated as a reference to a file
+// that already lives on the iPad — see the "video"/"audio" cases below.
 
 // Name of the iOS Shortcut the user must create once on their iPad. It should
 // accept "text" input (the filename), look the file up in a bookmarked folder,
@@ -14,10 +14,21 @@ export const VLC_SHORTCUT_NAME = 'Open in VLC';
 // (see piece/[id]/+page.svelte) without duplicating the extension list.
 export const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|avi|mkv)$/i;
 
+// Same idea as the video Shortcut above, for audio files that live in the
+// "Pianoles en jazz" folder inside Files → "Op mijn iPad". The Shortcut accepts
+// "text" input (the filename), fetches the file at that path, and shows it in
+// Quick Look — which plays audio directly with its own play/pause + skip
+// controls, so unlike video there's no separate player app to hand off to.
+export const AUDIO_SHORTCUT_NAME = 'Open Audio';
+
+// Exported so the source form's file picker can recognize an audio filename too.
+export const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|aac)$/i;
+
 export type LinkResult =
 	| { type: 'youtube'; embedUrl: string }
 	| { type: 'spotify'; embedUrl: string }
 	| { type: 'video'; filename: string; shortcutUrl: string }
+	| { type: 'audio'; filename: string; shortcutUrl: string }
 	| { type: 'link'; url: string }
 	| { type: 'none' };
 
@@ -53,6 +64,12 @@ export function detectLink(raw: string | null | undefined): LinkResult {
 	if (!url.startsWith('http://') && !url.startsWith('https://') && VIDEO_EXTENSIONS.test(url)) {
 		const shortcutUrl = `shortcuts://run-shortcut?name=${encodeURIComponent(VLC_SHORTCUT_NAME)}&input=text&text=${encodeURIComponent(url)}`;
 		return { type: 'video', filename: url, shortcutUrl };
+	}
+
+	// Local audio filename (not a URL): hand off to the "Open Audio" Shortcut.
+	if (!url.startsWith('http://') && !url.startsWith('https://') && AUDIO_EXTENSIONS.test(url)) {
+		const shortcutUrl = `shortcuts://run-shortcut?name=${encodeURIComponent(AUDIO_SHORTCUT_NAME)}&input=text&text=${encodeURIComponent(url)}`;
+		return { type: 'audio', filename: url, shortcutUrl };
 	}
 
 	// Any other URL

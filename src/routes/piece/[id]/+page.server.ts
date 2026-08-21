@@ -23,15 +23,7 @@ const ALLOWED_MIME_TYPES: Record<string, { attachmentType: string; ext: string }
 	'image/png': { attachmentType: 'image', ext: '.png' },
 	'image/gif': { attachmentType: 'image', ext: '.gif' },
 	'image/webp': { attachmentType: 'image', ext: '.webp' },
-	'application/pdf': { attachmentType: 'pdf', ext: '.pdf' },
-	'audio/mpeg': { attachmentType: 'audio', ext: '.mp3' },
-	// Browsers/OSes disagree on the MIME type for .m4a — cover the common variants.
-	'audio/mp4': { attachmentType: 'audio', ext: '.m4a' },
-	'audio/x-m4a': { attachmentType: 'audio', ext: '.m4a' },
-	'audio/m4a': { attachmentType: 'audio', ext: '.m4a' },
-	'audio/wav': { attachmentType: 'audio', ext: '.wav' },
-	'audio/x-wav': { attachmentType: 'audio', ext: '.wav' },
-	'audio/aac': { attachmentType: 'audio', ext: '.aac' }
+	'application/pdf': { attachmentType: 'pdf', ext: '.pdf' }
 };
 
 // Saves an uploaded File to the uploads/ directory and returns metadata for storage.
